@@ -481,6 +481,10 @@ Berikut adalah daftar lengkap **38 contoh tautan impor (*URL import links*)** un
 Bagi pengguna yang ingin menjalankan aplikasi Xray secara langsung di sisi klien dengan berkas JSON (`config.json`), berikut adalah contoh konfigurasi siap pakai:
 
 ### A. Contoh Klien VLESS WebSocket + TLS
+
+<details>
+<summary>▶ Tampilkan Berkas config.json Lengkap</summary>
+
 ```json
 {
   "log": {
@@ -532,7 +536,13 @@ Bagi pengguna yang ingin menjalankan aplikasi Xray secara langsung di sisi klien
 }
 ```
 
+</details>
+
 ### B. Contoh Klien VLESS Reality TCP Vision (XTLS)
+
+<details>
+<summary>▶ Tampilkan Berkas config.json Lengkap</summary>
+
 ```json
 {
   "log": {
@@ -583,7 +593,13 @@ Bagi pengguna yang ingin menjalankan aplikasi Xray secara langsung di sisi klien
 }
 ```
 
+</details>
+
 ### C. Contoh Klien VMess TCP + TLS
+
+<details>
+<summary>▶ Tampilkan Berkas config.json Lengkap</summary>
+
 ```json
 {
   "log": {
@@ -629,7 +645,13 @@ Bagi pengguna yang ingin menjalankan aplikasi Xray secara langsung di sisi klien
 }
 ```
 
+</details>
+
 ### D. Contoh Klien Trojan gRPC + TLS
+
+<details>
+<summary>▶ Tampilkan Berkas config.json Lengkap</summary>
+
 ```json
 {
   "log": {
@@ -672,6 +694,8 @@ Bagi pengguna yang ingin menjalankan aplikasi Xray secara langsung di sisi klien
   ]
 }
 ```
+
+</details>
 
 ## ⚙️ 8. Berkas Konfigurasi Server Xray (Xray Server `config.json`)
 
