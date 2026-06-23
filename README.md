@@ -124,11 +124,11 @@ Layanan `soft-proxy` dilengkapi dengan fitur-fitur canggih untuk menjamin perfor
    * Memanfaatkan modul `autoblocker.go` untuk mendeteksi scanner atau koneksi ilegal (seperti handshake TLS parsial/gagal).
    * Memblokir IP mencurigakan secara dinamis (*temporary blacklist*) dengan efisien menggunakan goroutine sweeper terpusat tanpa membebani memori server.
 
-4. **Manajemen Sertifikat ACME Terintegrasi (Automatic ACME Single & Multi-Domain Certs)**
-   * **Single-Domain Certs:** Mengajukan sertifikat Let's Encrypt secara otomatis untuk domain tunggal yang terdaftar pada konfigurasi.
-   * **Multi-Domain Certs (Multi-Tenancy):** Mengelola sertifikat terpisah untuk banyak domain secara bersamaan. `soft-proxy` memilih sertifikat secara dinamis berdasarkan SNI klien saat jabat tangan TLS berlangsung.
-   * **Wildcard Certs Support:** Mendukung pencocokan otomatis sertifikat wildcard (`*.domain.com` disimpan sebagai `_wildcard.domain.com.crt`) jika kecocokan SNI secara tepat tidak ditemukan.
-   * **Fallback Self-Signed:** Otomatis membuat sertifikat mandiri (*self-signed certificate fallback*) untuk domain tidak terdaftar agar TLS Handshake port 443 tetap stabil.
+4. **Manajemen Sertifikat ACME Terintegrasi (Automatic ACME DNS API & Multi-Domain Support)**
+   * **ACME DNS API (DNS-01 Challenge):** Memanfaatkan Cloudflare DNS API Token untuk menyelesaikan tantangan DNS-01. Mekanisme ini meniadakan kebutuhan eksposur Port 80 untuk proses verifikasi Let's Encrypt.
+   * **Wildcard Certs Support:** Melalui DNS-01 API challenge, `soft-proxy` secara sah mendukung penerbitan dan pembaruan sertifikat wildcard (`*.domain.com` disimpan sebagai `_wildcard.domain.com.crt`) secara otomatis.
+   * **Single & Multi-Domain (Multi-Tenancy):** Mengelola sertifikat terpisah untuk berbagai domain berbeda secara simultan. Sertifikat dipilih secara dinamis berdasarkan SNI klien (SNI-based lookup) saat handshake TLS berlangsung.
+   * **Fallback Self-Signed:** Otomatis membuat sertifikat mandiri (*self-signed certificate fallback*) untuk domain tidak terdaftar agar TLS Handshake tetap berjalan stabil sebelum sertifikat resmi terbit.
 
 5. **Pemuatan Ulang Konfigurasi Tanpa Henti (Thread-Safe Hot-Reload)**
    * Memantau berkas `config.yaml` secara berkala via `config.go`. Perubahan backend atau domain Reality akan dimuat secara dinamis tanpa perlu mematikan atau menghentikan koneksi aktif di server multiplexer.
@@ -198,6 +198,9 @@ acme:
   domains:
     - "yourdomain.com" # Hanya mendaftarkan 1 domain utama
   cache_dir: "/etc/soft-proxy/certs" # Rekomendasi direktori penyimpanan sertifikat SSL/TLS
+  dns_provider: "cloudflare" # Provider ACME DNS API (contoh: cloudflare)
+  email: "admin@yourdomain.com" # Email terdaftar Let's Encrypt
+  cloudflare_token: "YOUR_CLOUDFLARE_API_TOKEN" # Token API Cloudflare untuk tantangan DNS-01
 
 backends:
   vmess: "127.0.0.1:1334"
@@ -245,6 +248,9 @@ acme:
     - "anotherdomain.com"    # Domain tambahan kedua
     - "*.wildcarddomain.com" # Contoh domain wildcard yang didukung
   cache_dir: "/etc/soft-proxy/certs"
+  dns_provider: "cloudflare"
+  email: "admin@yourdomain.com"
+  cloudflare_token: "YOUR_CLOUDFLARE_API_TOKEN"
 
 backends:
   vmess: "127.0.0.1:1334"
