@@ -184,9 +184,9 @@ Layanan `soft-proxy` dilengkapi dengan fitur-fitur canggih untuk menjamin perfor
 
 Berikut adalah berkas konfigurasi `config.yaml` yang digunakan oleh `soft-proxy` untuk memetakan port tujuan secara terpusat berdasarkan SNI:
 
-### A. Contoh Konfigurasi Single-Domain Certs
+### A. Single-Domain Certs (Tanpa DNS API / HTTP-01 Challenge)
 
-Dalam mode ini, `soft-proxy` memproses pembaruan sertifikat SSL/TLS untuk satu domain tunggal:
+Dalam mode ini, `soft-proxy` mengajukan sertifikat Let's Encrypt untuk satu domain saja menggunakan verifikasi port 80 HTTP-01. Parameter `dns_provider` dan `cloudflare_token` dikosongkan/dihapus:
 
 ```yaml
 bind_addr: "0.0.0.0"
@@ -196,11 +196,9 @@ https_port: 443
 acme:
   enabled: true
   domains:
-    - "yourdomain.com" # Hanya mendaftarkan 1 domain utama
-  cache_dir: "/etc/soft-proxy/certs" # Rekomendasi direktori penyimpanan sertifikat SSL/TLS
-  dns_provider: "cloudflare" # Provider ACME DNS API (contoh: cloudflare)
+    - "yourdomain.com" # Hanya 1 domain utama
+  cache_dir: "/etc/soft-proxy/certs" # Direktori penyimpanan sertifikat SSL/TLS
   email: "admin@yourdomain.com" # Email terdaftar Let's Encrypt
-  cloudflare_token: "YOUR_CLOUDFLARE_API_TOKEN" # Token API Cloudflare untuk tantangan DNS-01
 
 backends:
   vmess: "127.0.0.1:1334"
@@ -232,9 +230,104 @@ reality_backends:
     - "www.icloud.com"
 ```
 
-### B. Contoh Konfigurasi Multi-Domain Certs (Multi-Tenancy)
+### B. Single-Domain Certs (Dengan DNS API / DNS-01 Challenge)
 
-Dalam mode ini, `soft-proxy` akan secara otomatis melayani sertifikat terpisah untuk berbagai domain berbeda secara simultan berdasarkan pencarian SNI (termasuk domain wildcard):
+Dalam mode ini, `soft-proxy` mengajukan sertifikat untuk satu domain menggunakan tantangan DNS-01 Cloudflare API. Tantangan diselesaikan secara otomatis di latar belakang tanpa membutuhkan port 80:
+
+```yaml
+bind_addr: "0.0.0.0"
+http_port: 80
+https_port: 443
+
+acme:
+  enabled: true
+  domains:
+    - "yourdomain.com" # Hanya 1 domain utama
+  cache_dir: "/etc/soft-proxy/certs"
+  dns_provider: "cloudflare" # Mengaktifkan verifikasi via Cloudflare DNS API
+  email: "admin@yourdomain.com"
+  cloudflare_token: "YOUR_CLOUDFLARE_API_TOKEN" # Token API Cloudflare
+
+backends:
+  vmess: "127.0.0.1:1334"
+  vless: "127.0.0.1:1234"
+  trojan: "127.0.0.1:1434"
+  http: "127.0.0.1:8080"
+
+reality_backends:
+  # VLESS Reality
+  "127.0.0.1:10444":
+    - "yahoo.com"
+  "127.0.0.1:10445":
+    - "www.google.com"
+  "127.0.0.1:10446":
+    - "www.yahoo.com"
+
+  # VMess Reality
+  "127.0.0.1:10554":
+    - "www.cisco.com"
+  "127.0.0.1:10555":
+    - "www.speedtest.net"
+  "127.0.0.1:10556":
+    - "www.bing.com"
+
+  # Trojan Reality
+  "127.0.0.1:10664":
+    - "apple.com"
+  "127.0.0.1:10665":
+    - "www.icloud.com"
+```
+
+### C. Multi-Domain Certs (Tanpa DNS API / HTTP-01 Challenge)
+
+Dalam mode ini, `soft-proxy` mengajukan sertifikat untuk beberapa domain berbeda secara bertahap menggunakan verifikasi HTTP-01. Skenario ini tidak mendukung domain wildcard:
+
+```yaml
+bind_addr: "0.0.0.0"
+http_port: 80
+https_port: 443
+
+acme:
+  enabled: true
+  domains:
+    - "yourdomain.com"    # Domain utama pertama
+    - "anotherdomain.com" # Domain tambahan kedua
+  cache_dir: "/etc/soft-proxy/certs"
+  email: "admin@yourdomain.com"
+
+backends:
+  vmess: "127.0.0.1:1334"
+  vless: "127.0.0.1:1234"
+  trojan: "127.0.0.1:1434"
+  http: "127.0.0.1:8080"
+
+reality_backends:
+  # VLESS Reality
+  "127.0.0.1:10444":
+    - "yahoo.com"
+  "127.0.0.1:10445":
+    - "www.google.com"
+  "127.0.0.1:10446":
+    - "www.yahoo.com"
+
+  # VMess Reality
+  "127.0.0.1:10554":
+    - "www.cisco.com"
+  "127.0.0.1:10555":
+    - "www.speedtest.net"
+  "127.0.0.1:10556":
+    - "www.bing.com"
+
+  # Trojan Reality
+  "127.0.0.1:10664":
+    - "apple.com"
+  "127.0.0.1:10665":
+    - "www.icloud.com"
+```
+
+### D. Multi-Domain Certs (Dengan DNS API / DNS-01 Challenge)
+
+Dalam mode ini, `soft-proxy` mengajukan sertifikat untuk beberapa domain sekaligus secara otomatis lewat Cloudflare DNS API (termasuk dukungan penuh wildcard domain):
 
 ```yaml
 bind_addr: "0.0.0.0"
