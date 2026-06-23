@@ -63,9 +63,9 @@ func ReloadConfig() error {
 		return err
 	}
 
-	configMu.Lock()
-	globalCfg = newCfg
-	configMu.Unlock()
+	for i := range newCfg.ACME.Domains {
+		newCfg.ACME.Domains[i] = strings.ToLower(newCfg.ACME.Domains[i])
+	}
 
 	realityLookupMu.Lock()
 	clear(realityLookup)
@@ -76,9 +76,9 @@ func ReloadConfig() error {
 	}
 	realityLookupMu.Unlock()
 
-	for i := range newCfg.ACME.Domains {
-		newCfg.ACME.Domains[i] = strings.ToLower(newCfg.ACME.Domains[i])
-	}
+	configMu.Lock()
+	globalCfg = newCfg
+	configMu.Unlock()
 
 	if strings.ToLower(newCfg.ACME.DNSProvider) == "cloudflare" && OnCloudflareDNS != nil {
 		OnCloudflareDNS()

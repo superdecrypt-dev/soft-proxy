@@ -192,7 +192,11 @@ func runHTTPSServer(listener net.Listener, selfSignedConfig *tls.Config, acmeCon
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
-			return
+			if strings.Contains(err.Error(), "closed") {
+				return
+			}
+			logger.Warn("Failed to accept connection on port 443: %v", err)
+			continue
 		}
 
 		ip, _, _ := net.SplitHostPort(conn.RemoteAddr().String())
