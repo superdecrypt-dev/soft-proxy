@@ -521,5 +521,12 @@ Bagi pengguna yang ingin menjalankan aplikasi Xray secara langsung di sisi klien
 }
 ```
 
+---
+
+## 📄 Lisensi (License)
+
+Proyek ini dilisensikan di bawah **MIT License**. Lihat berkas [LICENSE](file:///root/proyek/soft/LICENSE) untuk detail selengkapnya.
+
+
 
 
