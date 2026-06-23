@@ -2,7 +2,8 @@
 
 Soft-Proxy adalah layanan **Multiplexer Server** (port-sharing) cerdas berbasis bahasa Go yang didesain untuk menyatukan berbagai protokol proxy (VLESS, VMess, Trojan, Reality) ke dalam port publik tunggal (Port 80 untuk HTTP, Port 443 untuk HTTPS/TLS).
 
-Sistem ini didesain khusus untuk dijalankan di VPS linux dengan tingkat kehandalan tinggi, keamanan dari serangan Denial of Service (DoS) dan kebocoran memori, serta kompatibilitas penuh dengan bypass SSL/TLS SNI untuk protokol modern.
+> [!WARNING]
+> Proyek ini bersifat **eksperimental**. Penggunaan dalam lingkungan produksi harus dilakukan dengan hati-hati karena sangat mungkin terdapat kesalahan konfigurasi (miss), ketidakcocokan sistem, atau malafungsi lainnya.
 
 ---
 
