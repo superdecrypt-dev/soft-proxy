@@ -1332,33 +1332,33 @@ Berikut adalah berkas konfigurasi `/etc/xray/config.json` lengkap di sisi server
 
 ## ⚙️ 9. Berkas Konfigurasi Server Nginx (Nginx Server Configuration)
 
-Berikut adalah berkas konfigurasi Nginx `/etc/nginx/sites-available/soft-proxy-fallback` yang telah diperingkas secara efisien menggunakan **Nginx map** dan **regex location matching** untuk merutekan lalu lintas WebSocket, HTTPUpgrade, gRPC, dan XHTTP ke backend Xray:
+Berikut adalah berkas konfigurasi Nginx `/etc/nginx/sites-available/soft-proxy-fallback` yang telah diperingkas secara efisien menggunakan **Nginx map** dan **regex location matching** untuk merutekan lalu lintas WebSocket, HTTPUpgrade, gRPC, dan XHTTP ke backend Xray. Konfigurasi ini juga secara otomatis mendukung penggunaan **sembarang prefix teks-bebas di depan path** (contoh: `/(teks-bebas)/vless-ws`) dengan membersihkan prefix tersebut sebelum meneruskannya ke Xray:
 
 <details>
 <summary>▶ Tampilkan Berkas soft-proxy-fallback Lengkap</summary>
 
 ```nginx
-# Map path to backend port using regex prefix matching (~^)
+# Map path to backend port using loose regex matching (~keyword)
 map $uri $xray_port {
     default 0;
 
     # VLESS
-    ~^/vless-ws          1235;
-    ~^/vless-httpupgrade 1236;
-    ~^/vless-grpc        1237;
-    ~^/vless-xhttp       1238;
+    ~vless-ws          1235;
+    ~vless-httpupgrade 1236;
+    ~vless-grpc        1237;
+    ~vless-xhttp       1238;
 
     # VMess
-    ~^/vmess-ws          1335;
-    ~^/vmess-httpupgrade 1336;
-    ~^/vmess-grpc        1337;
-    ~^/vmess-xhttp       1338;
+    ~vmess-ws          1335;
+    ~vmess-httpupgrade 1336;
+    ~vmess-grpc        1337;
+    ~vmess-xhttp       1338;
 
     # Trojan
-    ~^/trojan-ws          1435;
-    ~^/trojan-httpupgrade 1436;
-    ~^/trojan-grpc        1437;
-    ~^/trojan-xhttp       1438;
+    ~trojan-ws          1435;
+    ~trojan-httpupgrade 1436;
+    ~trojan-grpc        1437;
+    ~trojan-xhttp       1438;
 }
 
 server {
@@ -1373,8 +1373,12 @@ server {
     }
 
     # WebSocket & HTTPUpgrade (standard HTTP proxy)
-    location ~ ^/(vless|vmess|trojan)-(ws|httpupgrade)(?:/|$) {
+    location ~ (vless|vmess|trojan)-(ws|httpupgrade) {
         if ($xray_port = 0) { return 404; }
+
+        # Strip sembarang prefix teks-bebas di depan path (misal: /teks-bebas/vless-ws -> /vless-ws)
+        rewrite ^.*/((?:vless|vmess|trojan)-(?:ws|httpupgrade))(/.*)?$ /$1$2 break;
+
         proxy_redirect off;
         proxy_pass http://127.0.0.1:$xray_port;
         proxy_http_version 1.1;
@@ -1388,8 +1392,12 @@ server {
     }
 
     # gRPC & XHTTP (HTTP/2 grpc stream proxy)
-    location ~ ^/(vless|vmess|trojan)-(grpc|xhttp)(?:/|$) {
+    location ~ (vless|vmess|trojan)-(grpc|xhttp) {
         if ($xray_port = 0) { return 404; }
+
+        # Strip sembarang prefix teks-bebas di depan path (misal: /teks-bebas/vless-grpc/Tun -> /vless-grpc/Tun)
+        rewrite ^.*/((?:vless|vmess|trojan)-(?:grpc|xhttp))(/.*)?$ /$1$2 break;
+
         grpc_pass grpc://127.0.0.1:$xray_port;
         grpc_read_timeout 600s;
         grpc_send_timeout 600s;
