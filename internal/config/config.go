@@ -71,10 +71,14 @@ func ReloadConfig() error {
 	clear(realityLookup)
 	for backend, domains := range newCfg.RealityBackends {
 		for _, domain := range domains {
-			realityLookup[domain] = backend
+			realityLookup[strings.ToLower(domain)] = backend
 		}
 	}
 	realityLookupMu.Unlock()
+
+	for i := range newCfg.ACME.Domains {
+		newCfg.ACME.Domains[i] = strings.ToLower(newCfg.ACME.Domains[i])
+	}
 
 	if strings.ToLower(newCfg.ACME.DNSProvider) == "cloudflare" && OnCloudflareDNS != nil {
 		OnCloudflareDNS()
@@ -90,9 +94,11 @@ func StartConfigWatcher(filePath string) {
 	configMu.Unlock()
 
 	var lastModTime time.Time
+	var lastSize int64
 
 	if info, err := os.Stat(filePath); err == nil {
 		lastModTime = info.ModTime()
+		lastSize = info.Size()
 	}
 
 	for {
@@ -104,8 +110,10 @@ func StartConfigWatcher(filePath string) {
 		}
 
 		modTime := info.ModTime()
-		if modTime.After(lastModTime) {
+		fileSize := info.Size()
+		if modTime.After(lastModTime) || fileSize != lastSize {
 			lastModTime = modTime
+			lastSize = fileSize
 			logger.Info("Config file modification detected. Hot-reloading configuration automatically...")
 
 			time.Sleep(100 * time.Millisecond)
@@ -160,6 +168,7 @@ func IsACMEDomain(sni string) bool {
 	if !globalCfg.ACME.Enabled {
 		return false
 	}
+	sni = strings.ToLower(sni)
 	for _, domain := range globalCfg.ACME.Domains {
 		if sni == domain {
 			return true
@@ -176,7 +185,7 @@ func GetACMEConfig() AcmeConfig {
 
 func GetRealityBackend(sni string) (string, bool) {
 	realityLookupMu.RLock()
-	addr, ok := realityLookup[sni]
+	addr, ok := realityLookup[strings.ToLower(sni)]
 	realityLookupMu.RUnlock()
 	if ok {
 		return addr, true
