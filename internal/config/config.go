@@ -194,10 +194,11 @@ func GetRealityBackend(sni string) (string, bool) {
 	configMu.RLock()
 	defer configMu.RUnlock()
 	for _, domain := range globalCfg.RealityDomains {
-		if sni == domain {
+		if strings.EqualFold(sni, domain) {
 			if bAddr, exists := globalCfg.Backends["reality"]; exists {
 				return bAddr, true
 			}
+			logger.Warn("Reality domain %q matched but no 'reality' backend configured, using 127.0.0.1:10444 as fallback", sni)
 			return "127.0.0.1:10444", true
 		}
 	}

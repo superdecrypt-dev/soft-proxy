@@ -178,8 +178,8 @@ func ParseHTTPPath(data []byte) string {
 		lineEnd = bytes.Index(data, []byte("\n"))
 	}
 	if lineEnd == -1 {
-	return "vmess"
-}
+		return ""
+	}
 	firstLine := data[:lineEnd]
 	parts := bytes.Split(firstLine, []byte(" "))
 	if len(parts) >= 2 {
