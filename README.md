@@ -184,6 +184,10 @@ Layanan `soft-proxy` dilengkapi dengan fitur-fitur canggih untuk menjamin perfor
 
 Berikut adalah berkas konfigurasi `config.yaml` yang digunakan oleh `soft-proxy` untuk memetakan port tujuan secara terpusat berdasarkan SNI:
 
+### A. Contoh Konfigurasi Single-Domain Certs
+
+Dalam mode ini, `soft-proxy` memproses pembaruan sertifikat SSL/TLS untuk satu domain tunggal:
+
 ```yaml
 bind_addr: "0.0.0.0"
 http_port: 80
@@ -192,8 +196,55 @@ https_port: 443
 acme:
   enabled: true
   domains:
-    - "yourdomain.com"
+    - "yourdomain.com" # Hanya mendaftarkan 1 domain utama
   cache_dir: "/etc/soft-proxy/certs" # Rekomendasi direktori penyimpanan sertifikat SSL/TLS
+
+backends:
+  vmess: "127.0.0.1:1334"
+  vless: "127.0.0.1:1234"
+  trojan: "127.0.0.1:1434"
+  http: "127.0.0.1:8080"
+
+reality_backends:
+  # VLESS Reality
+  "127.0.0.1:10444":
+    - "yahoo.com"
+  "127.0.0.1:10445":
+    - "www.google.com"
+  "127.0.0.1:10446":
+    - "www.yahoo.com"
+
+  # VMess Reality
+  "127.0.0.1:10554":
+    - "www.cisco.com"
+  "127.0.0.1:10555":
+    - "www.speedtest.net"
+  "127.0.0.1:10556":
+    - "www.bing.com"
+
+  # Trojan Reality
+  "127.0.0.1:10664":
+    - "apple.com"
+  "127.0.0.1:10665":
+    - "www.icloud.com"
+```
+
+### B. Contoh Konfigurasi Multi-Domain Certs (Multi-Tenancy)
+
+Dalam mode ini, `soft-proxy` akan secara otomatis melayani sertifikat terpisah untuk berbagai domain berbeda secara simultan berdasarkan pencarian SNI (termasuk domain wildcard):
+
+```yaml
+bind_addr: "0.0.0.0"
+http_port: 80
+https_port: 443
+
+acme:
+  enabled: true
+  domains:
+    - "yourdomain.com"       # Domain utama pertama
+    - "anotherdomain.com"    # Domain tambahan kedua
+    - "*.wildcarddomain.com" # Contoh domain wildcard yang didukung
+  cache_dir: "/etc/soft-proxy/certs"
 
 backends:
   vmess: "127.0.0.1:1334"
