@@ -68,7 +68,7 @@ flowchart TD
     Client -->|"Port 80"| SP
     SP --> SNI
 
-    SNI -->|"SNI = test2.tunnel.sryze.cc"| ACME
+    SNI -->|"SNI = yourdomain.com"| ACME
     SNI -->|"SNI = yahoo.com / www.yahoo.com / www.google.com"| BYPASS
     SNI -->|"SNI = domain bebas lainnya"| SS
 
@@ -96,7 +96,7 @@ flowchart TD
 
 ### Penanganan Port 443 (HTTPS/TLS)
 1.  **TLS Bypass (Reality):** SNI dicocokkan dengan domain Reality (seperti `yahoo.com`, `www.google.com`, `www.yahoo.com`). Sambungan byte mentah langsung dialihkan (*piping*) ke port Xray Reality tujuan tanpa membongkar TLS handshake di tingkat multiplexer.
-2.  **TLS Termination (Standar):** Jika SNI adalah domain resmi (`test2.tunnel.sryze.cc`) atau domain bebas lainnya, jabat tangan TLS diselesaikan di multiplexer menggunakan sertifikat resmi (ACME Let's Encrypt) atau fallback self-signed.
+2.  **TLS Termination (Standar):** Jika SNI adalah domain resmi (`yourdomain.com`) atau domain bebas lainnya, jabat tangan TLS diselesaikan di multiplexer menggunakan sertifikat resmi (ACME Let's Encrypt) atau fallback self-signed.
 3.  **Protocol Sniffing:** Setelah TLS didekripsi, sistem membaca 256 byte data awal (*peek decrypted stream*) untuk mengenali protokol internal:
     *   `Byte[0] == 0x00` ➡️ VLESS TCP (`127.0.0.1:1234`)
     *   `56-character Hexadecimal + CRLF` ➡️ Trojan TCP (`127.0.0.1:1434`)
@@ -190,7 +190,7 @@ https_port: 443
 acme:
   enabled: true
   domains:
-    - "test2.tunnel.sryze.cc"
+    - "yourdomain.com"
   cache_dir: "/etc/soft-proxy/certs" # Rekomendasi direktori penyimpanan sertifikat SSL/TLS
 
 backends:
@@ -273,54 +273,54 @@ Berikut adalah daftar lengkap **38 contoh tautan impor (*URL import links*)** un
 
 | Skenario Protokol | Protokol | Keamanan | Transport | Tautan Impor Klien (Client Import URL) |
 | :--- | :--- | :--- | :--- | :--- |
-| **VLESS TCP + TLS** | VLESS | TLS | TCP | `vless://09abf07d-a8ea-4748-9f37-5b3dca0e0a94@test2.tunnel.sryze.cc:443?encryption=none&security=tls&sni=test2.tunnel.sryze.cc#VLESS-TCP-TLS` |
-| **VLESS WebSocket + TLS** | VLESS | TLS | WS | `vless://09abf07d-a8ea-4748-9f37-5b3dca0e0a94@test2.tunnel.sryze.cc:443?encryption=none&security=tls&sni=test2.tunnel.sryze.cc&type=ws&path=%2Fvless-ws#VLESS-WS-TLS` |
-| **VLESS HTTPUpgrade + TLS** | VLESS | TLS | HTTPUpgrade | `vless://09abf07d-a8ea-4748-9f37-5b3dca0e0a94@test2.tunnel.sryze.cc:443?encryption=none&security=tls&sni=test2.tunnel.sryze.cc&type=httpupgrade&path=%2Fvless-httpupgrade#VLESS-HTTPUpgrade-TLS` |
-| **VLESS gRPC + TLS** | VLESS | TLS | gRPC | `vless://09abf07d-a8ea-4748-9f37-5b3dca0e0a94@test2.tunnel.sryze.cc:443?encryption=none&security=tls&sni=test2.tunnel.sryze.cc&type=grpc&serviceName=vless-grpc#VLESS-gRPC-TLS` |
-| **VLESS XHTTP + TLS** | VLESS | TLS | XHTTP | `vless://09abf07d-a8ea-4748-9f37-5b3dca0e0a94@test2.tunnel.sryze.cc:443?encryption=none&security=tls&sni=test2.tunnel.sryze.cc&type=xhttp&path=%2Fvless-xhttp#VLESS-XHTTP-TLS` |
-| **VMess TCP + TLS** | VMess | TLS | TCP | `vmess://eyJ2IjoiMiIsInBzIjoiVk1FU1MtVENQLVRMUyIsImFkZCI6InRlc3QyLnR1bm5lbC5zcnl6ZS5jYyIsInBvcnQiOiI0NDMiLCJpZCI6IjhlNDJiNDc4LTNhNGItNDhiMC1hZDJlLWE1ODYyNWFjZGE4ZSIsImFpZCI6IjAiLCJuZXQiOiJ0Y3AiLCJ0eXBlIjoibm9uZSIsInRscyI6InRscyIsInNuaSI6InRlc3QyLnR1bm5lbC5zcnl6ZS5jYyJ9` |
-| **VMess WebSocket + TLS** | VMess | TLS | WS | `vmess://eyJ2IjoiMiIsInBzIjoiVk1FU1MtV1MtVExTIiwiYWRkIjoidGVzdDIudHVubmVsLnNyeXplLmNjIiwicG9ydCI6IjQ0MyIsImlkIjoiOGU0MmI0NzgtM2E0Yi00OGIwLWFkMmUtYTU4NjI1YWNkYThlIiwiYWlkIjoiMCIsIm5ldCI6IndzIiwidHlwZSI6Im5vbmUiLCJob3N0IjoidGVzdDIudHVubmVsLnNyeXplLmNjIiwicGF0aCI6Ii92bWVzcy13cyIsInRscyI6InRscyIsInNuaSI6InRlc3QyLnR1bm5lbC5zcnl6ZS5jYyJ9` |
-| **VMess HTTPUpgrade + TLS** | VMess | TLS | HTTPUpgrade | `vmess://eyJ2IjoiMiIsInBzIjoiVk1FU1MtSFRUUFVwLVRMUyIsImFkZCI6InRlc3QyLnR1bm5lbC5zcnl6ZS5jYyIsInBvcnQiOiI0NDMiLCJpZCI6IjhlNDJiNDc4LTNhNGItNDhiMC1hZDJlLWE1ODYyNWFjZGE4ZSIsImFpZCI6IjAiLCJuZXQiOiJodHRwdXBncmFkZSIsInR5cGUiOiJub25lIiwiaG9zdCI6InRlc3QyLnR1bm5lbC5zcnl6ZS5jYyIsInBhdGgiOiIvdm1lc3MtaHR0cHVwZ3JhZGUiLCJ0bHMiOiJ0bHMiLCJzbmkiOiJ0ZXN0Mi50dW5uZWwuc3J5emUuY2MifQ==` |
-| **VMess gRPC + TLS** | VMess | TLS | gRPC | `vmess://eyJ2IjoiMiIsInBzIjoiVk1FU1MtZ1JQQy1UTFMiLCJhZGQiOiJ0ZXN0Mi50dW5uZWwuc3J5emUuY2MiLCJwb3J0IjoiNDQzIiwiaWQiOiI4ZTQyYjQ3OC0zYTRiLTQ4YjAtYWQyZS1hNTg2MjVhY2RhOGUiLCJhaWQiOiIwIiwibmV0IjoiZ3JwYyIsInR5cGUiOiJub25lIiwicGF0aCI6InZtZXNzLWdycGMiLCJ0bHMiOiJ0bHMiLCJzbmkiOiJ0ZXN0Mi50dW5uZWwuc3J5emUuY2MifQ==` |
-| **VMess XHTTP + TLS** | VMess | TLS | XHTTP | `vmess://eyJ2IjoiMiIsInBzIjoiVk1FU1MtWUhUVFAtVExTIiwiYWRkIjoidGVzdDIudHVubmVsLnNyeXplLmNjIiwicG9ydCI6IjQ0MyIsImlkIjoiOGU0MmI0NzgtM2E0Yi00OGIwLWFkMmUtYTU4NjI1YWNkYThlIiwiYWlkIjoiMCIsIm5ldCI6InhodHRwIiwidHlwZSI6Im5vbmUiLCJob3N0IjoidGVzdDIudHVubmVsLnNyeXplLmNjIiwicGF0aCI6Ii92bWVzcy14aHR0cCIsInRscyI6InRscyIsInNuaSI6InRlc3QyLnR1bm5lbC5zcnl6ZS5jYyJ9` |
-| **Trojan TCP + TLS** | Trojan | TLS | TCP | `trojan://140141d26c7dfa2171cf1cc460190ba2@test2.tunnel.sryze.cc:443?security=tls&type=tcp&sni=test2.tunnel.sryze.cc#Trojan-TCP-TLS` |
-| **Trojan WebSocket + TLS** | Trojan | TLS | WS | `trojan://140141d26c7dfa2171cf1cc460190ba2@test2.tunnel.sryze.cc:443?security=tls&type=ws&path=%2Ftrojan-ws&host=test2.tunnel.sryze.cc&sni=test2.tunnel.sryze.cc#Trojan-WS-TLS` |
-| **Trojan HTTPUpgrade + TLS** | Trojan | TLS | HTTPUpgrade | `trojan://140141d26c7dfa2171cf1cc460190ba2@test2.tunnel.sryze.cc:443?security=tls&type=httpupgrade&path=%2Ftrojan-httpupgrade&host=test2.tunnel.sryze.cc#Trojan-HTTPUpgrade-TLS` |
-| **Trojan gRPC + TLS** | Trojan | TLS | gRPC | `trojan://140141d26c7dfa2171cf1cc460190ba2@test2.tunnel.sryze.cc:443?security=tls&type=grpc&serviceName=trojan-grpc&sni=test2.tunnel.sryze.cc#Trojan-gRPC-TLS` |
-| **Trojan XHTTP + TLS** | Trojan | TLS | XHTTP | `trojan://140141d26c7dfa2171cf1cc460190ba2@test2.tunnel.sryze.cc:443?security=tls&type=xhttp&path=%2Ftrojan-xhttp&host=test2.tunnel.sryze.cc#Trojan-XHTTP-TLS` |
+| **VLESS TCP + TLS** | VLESS | TLS | TCP | `vless://09abf07d-a8ea-4748-9f37-5b3dca0e0a94@yourdomain.com:443?encryption=none&security=tls&sni=yourdomain.com#VLESS-TCP-TLS` |
+| **VLESS WebSocket + TLS** | VLESS | TLS | WS | `vless://09abf07d-a8ea-4748-9f37-5b3dca0e0a94@yourdomain.com:443?encryption=none&security=tls&sni=yourdomain.com&type=ws&path=%2Fvless-ws#VLESS-WS-TLS` |
+| **VLESS HTTPUpgrade + TLS** | VLESS | TLS | HTTPUpgrade | `vless://09abf07d-a8ea-4748-9f37-5b3dca0e0a94@yourdomain.com:443?encryption=none&security=tls&sni=yourdomain.com&type=httpupgrade&path=%2Fvless-httpupgrade#VLESS-HTTPUpgrade-TLS` |
+| **VLESS gRPC + TLS** | VLESS | TLS | gRPC | `vless://09abf07d-a8ea-4748-9f37-5b3dca0e0a94@yourdomain.com:443?encryption=none&security=tls&sni=yourdomain.com&type=grpc&serviceName=vless-grpc#VLESS-gRPC-TLS` |
+| **VLESS XHTTP + TLS** | VLESS | TLS | XHTTP | `vless://09abf07d-a8ea-4748-9f37-5b3dca0e0a94@yourdomain.com:443?encryption=none&security=tls&sni=yourdomain.com&type=xhttp&path=%2Fvless-xhttp#VLESS-XHTTP-TLS` |
+| **VMess TCP + TLS** | VMess | TLS | TCP | `vmess://eyJ2IjoiMiIsInBzIjoiVk1FU1MtVENQLVRMUyIsImFkZCI6InlvdXJkb21haW4uY29tIiwicG9ydCI6IjQ0MyIsImlkIjoiOGU0MmI0NzgtM2E0Yi00OGIwLWFkMmUtYTU4NjI1YWNkYThlIiwiYWlkIjoiMCIsIm5ldCI6InRjcCIsInR5cGUiOiJub25lIiwidGxzIjoidGxzIiwic25pIjoieW91cmRvbWFpbi5jb20ifQ` |
+| **VMess WebSocket + TLS** | VMess | TLS | WS | `vmess://eyJ2IjoiMiIsInBzIjoiVk1FU1MtV1MtVExTIiwiYWRkIjoieW91cmRvbWFpbi5jb20iLCJwb3J0IjoiNDQzIiwiaWQiOiI4ZTQyYjQ3OC0zYTRiLTQ4YjAtYWQyZS1hNTg2MjVhY2RhOGUiLCJhaWQiOiIwIiwibmV0Ijoid3MiLCJ0eXBlIjoibm9uZSIsImhvc3QiOiJ5b3VyZG9tYWluLmNvbSIsInBhdGgiOiIvdm1lc3Mtd3MiLCJ0bHMiOiJ0bHMiLCJzbmkiOiJ5b3VyZG9tYWluLmNvbSJ9` |
+| **VMess HTTPUpgrade + TLS** | VMess | TLS | HTTPUpgrade | `vmess://eyJ2IjoiMiIsInBzIjoiVk1FU1MtSFRUUFVwLVRMUyIsImFkZCI6InlvdXJkb21haW4uY29tIiwicG9ydCI6IjQ0MyIsImlkIjoiOGU0MmI0NzgtM2E0Yi00OGIwLWFkMmUtYTU4NjI1YWNkYThlIiwiYWlkIjoiMCIsIm5ldCI6Imh0dHB1cGdyYWRlIiwidHlwZSI6Im5vbmUiLCJob3N0IjoieW91cmRvbWFpbi5jb20iLCJwYXRoIjoiL3ZtZXNzLWh0dHB1cGdyYWRlIiwidGxzIjoidGxzIiwic25pIjoieW91cmRvbWFpbi5jb20ifQ` |
+| **VMess gRPC + TLS** | VMess | TLS | gRPC | `vmess://eyJ2IjoiMiIsInBzIjoiVk1FU1MtZ1JQQy1UTFMiLCJhZGQiOiJ5b3VyZG9tYWluLmNvbSIsInBvcnQiOiI0NDMiLCJpZCI6IjhlNDJiNDc4LTNhNGItNDhiMC1hZDJlLWE1ODYyNWFjZGE4ZSIsImFpZCI6IjAiLCJuZXQiOiJncnBjIiwidHlwZSI6Im5vbmUiLCJwYXRoIjoidm1lc3MtZ3JwYyIsInRscyI6InRscyIsInNuaSI6InlvdXJkb21haW4uY29tIn0` |
+| **VMess XHTTP + TLS** | VMess | TLS | XHTTP | `vmess://eyJ2IjoiMiIsInBzIjoiVk1FU1MtWUhUVFAtVExTIiwiYWRkIjoieW91cmRvbWFpbi5jb20iLCJwb3J0IjoiNDQzIiwiaWQiOiI4ZTQyYjQ3OC0zYTRiLTQ4YjAtYWQyZS1hNTg2MjVhY2RhOGUiLCJhaWQiOiIwIiwibmV0IjoieGh0dHAiLCJ0eXBlIjoibm9uZSIsImhvc3QiOiJ5b3VyZG9tYWluLmNvbSIsInBhdGgiOiIvdm1lc3MteGh0dHAiLCJ0bHMiOiJ0bHMiLCJzbmkiOiJ5b3VyZG9tYWluLmNvbSJ9` |
+| **Trojan TCP + TLS** | Trojan | TLS | TCP | `trojan://140141d26c7dfa2171cf1cc460190ba2@yourdomain.com:443?security=tls&type=tcp&sni=yourdomain.com#Trojan-TCP-TLS` |
+| **Trojan WebSocket + TLS** | Trojan | TLS | WS | `trojan://140141d26c7dfa2171cf1cc460190ba2@yourdomain.com:443?security=tls&type=ws&path=%2Ftrojan-ws&host=yourdomain.com&sni=yourdomain.com#Trojan-WS-TLS` |
+| **Trojan HTTPUpgrade + TLS** | Trojan | TLS | HTTPUpgrade | `trojan://140141d26c7dfa2171cf1cc460190ba2@yourdomain.com:443?security=tls&type=httpupgrade&path=%2Ftrojan-httpupgrade&host=yourdomain.com#Trojan-HTTPUpgrade-TLS` |
+| **Trojan gRPC + TLS** | Trojan | TLS | gRPC | `trojan://140141d26c7dfa2171cf1cc460190ba2@yourdomain.com:443?security=tls&type=grpc&serviceName=trojan-grpc&sni=yourdomain.com#Trojan-gRPC-TLS` |
+| **Trojan XHTTP + TLS** | Trojan | TLS | XHTTP | `trojan://140141d26c7dfa2171cf1cc460190ba2@yourdomain.com:443?security=tls&type=xhttp&path=%2Ftrojan-xhttp&host=yourdomain.com#Trojan-XHTTP-TLS` |
 
 ### B. Tautan Klien Port 443 Reality (TLS Bypass)
 
 | Skenario Protokol | Protokol | Keamanan | Transport | Tautan Impor Klien (Client Import URL) |
 | :--- | :--- | :--- | :--- | :--- |
-| **VLESS Reality TCP Vision** | VLESS | Reality | TCP (Vision) | `vless://e75a1d12-7c68-4971-b1fb-3f7fe767c6d6@test2.tunnel.sryze.cc:443?encryption=none&security=reality&sni=yahoo.com&fp=chrome&pbk=Y07pOrSNdp7YtiCXffp64UoTanx1J4LK_YX8HkHs_is&sid=01234567&flow=xtls-rprx-vision#VLESS-Reality-Vision` |
-| **VLESS Reality TCP (No Flow)** | VLESS | Reality | TCP | `vless://09abf07d-a8ea-4748-9f37-5b3dca0e0a94@test2.tunnel.sryze.cc:443?encryption=none&security=reality&sni=www.yahoo.com&fp=chrome&pbk=Y07pOrSNdp7YtiCXffp64UoTanx1J4LK_YX8HkHs_is&sid=01234567#VLESS-Reality-None` |
-| **VLESS Reality XHTTP** | VLESS | Reality | XHTTP | `vless://09abf07d-a8ea-4748-9f37-5b3dca0e0a94@test2.tunnel.sryze.cc:443?encryption=none&security=reality&sni=www.google.com&fp=chrome&pbk=Y07pOrSNdp7YtiCXffp64UoTanx1J4LK_YX8HkHs_is&sid=01234567&type=xhttp&path=%2Fvless-xhttp-reality#VLESS-Reality-XHTTP` |
-| **VMess Reality TCP Vision** | VMess | Reality | TCP (Vision) | `vmess://eyJ2IjoiMiIsInBzIjoiVk1FU1MtUmVhbGl0eS1UQ1AtVmlzaW9uIiwiYWRkIjoidGVzdDIudHVubmVsLnNyeXplLmNjIiwicG9ydCI6IjQ0MyIsImlkIjoiOGU0MmI0NzgtM2E0Yi00OGIwLWFkMmUtYTU4NjI1YWNkYThlIiwiYWlkIjoiMCIsIm5ldCI6InRjcCIsInR5cGUiOiJub25lIiwidGxzIjoicmVhbGl0eSIsInNuaSI6Ind3dy5jaXNjby5jb20iLCJwYmsiOiJZMDRwT3JTTmRwN1l0aUNYZmZwNjRVb1RhbngxSDRMS19ZWDhIa0hzX2lzIiwic2lkIjoiMDEyMzQ1NjciLCJmcCI6ImNocm9tZSIsImZsb3ciOiJ4dGxzLXJwcmgtdmlzaW9uIn0=` |
-| **VMess Reality TCP (No Flow)** | VMess | Reality | TCP | `vmess://eyJ2IjoiMiIsInBzIjoiVk1FU1MtUmVhbGl0eS1UQ1AiLCJhZGQiOiJ0ZXN0Mi50dW5uZWwuc3J5emUuY2MiLCJwb3J0IjoiNDQzIiwiaWQiOiI4ZTQyYjQ3OC0zYTRiLTQ4YjAtYWQyZS1hNTg2MjVhY2RhOGUiLCJhaWQiOiIwIiwibmV0IjoidGNwIiwidHlwZSI6Im5vbmUiLCJ0bHMiOiJyZWFsaXR5Iiwic25pIjoid3d3LmJpbmcuY29tIiwicGJrIjoiWTA3cE9yU05kcDdZdGlDWGZmcDY0VW9UYW54MUo0TEtfWVg4SGtIc19pcyIsInNpZCI6IjAxMjM0NTY3IiwiZnAiOiJjaHJvbWUifQ==` |
-| **VMess Reality XHTTP** | VMess | Reality | XHTTP | `vmess://eyJ2IjoiMiIsInBzIjoiVk1FU1MtUmVhbGl0eS1YSFRUUCIsImFkZCI6InRlc3QyLnR1bm5lbC5zcnl6ZS5jYyIsInBvcnQiOiI0NDMiLCJpZCI6IjhlNDJiNDc4LTNhNGItNDhiMC1hZDJlLWE1ODYyNWFjZGE4ZSIsImFpZCI6IjAiLCJuZXQiOiJ4aHR0cCIsInR5cGUiOiJub25lIiwidGxzIjoicmVhbGl0eSIsInNuaSI6Ind3dy5zcGVlZHRlc3QubmV0IiwicGJrIjoiWTA3cE9yU05kcDdZdGlDWGZmcDY0VW9UYW54MUo0TEtfWVg4SGtIc19pcyIsInNpZCI6IjAxMjM0NTY3IiwiZnAiOiJjaHJvbWUiLCJwYXRoIjoiL3ZtZXNzLXhodHRwLXJlYWxpdHkifQ==` |
-| **Trojan Reality TCP** | Trojan | Reality | TCP | `trojan://140141d26c7dfa2171cf1cc460190ba2@test2.tunnel.sryze.cc:443?security=reality&type=tcp&pbk=Y07pOrSNdp7YtiCXffp64UoTanx1J4LK_YX8HkHs_is&sni=apple.com&fp=chrome&sid=01234567#Trojan-Reality-TCP` |
-| **Trojan Reality XHTTP** | Trojan | Reality | XHTTP | `trojan://140141d26c7dfa2171cf1cc460190ba2@test2.tunnel.sryze.cc:443?security=reality&type=xhttp&path=%2Ftrojan-xhttp-reality&pbk=Y07pOrSNdp7YtiCXffp64UoTanx1J4LK_YX8HkHs_is&sni=www.icloud.com&fp=chrome&sid=01234567#Trojan-Reality-XHTTP` |
+| **VLESS Reality TCP Vision** | VLESS | Reality | TCP (Vision) | `vless://e75a1d12-7c68-4971-b1fb-3f7fe767c6d6@yourdomain.com:443?encryption=none&security=reality&sni=yahoo.com&fp=chrome&pbk=Y07pOrSNdp7YtiCXffp64UoTanx1J4LK_YX8HkHs_is&sid=01234567&flow=xtls-rprx-vision#VLESS-Reality-Vision` |
+| **VLESS Reality TCP (No Flow)** | VLESS | Reality | TCP | `vless://09abf07d-a8ea-4748-9f37-5b3dca0e0a94@yourdomain.com:443?encryption=none&security=reality&sni=www.yahoo.com&fp=chrome&pbk=Y07pOrSNdp7YtiCXffp64UoTanx1J4LK_YX8HkHs_is&sid=01234567#VLESS-Reality-None` |
+| **VLESS Reality XHTTP** | VLESS | Reality | XHTTP | `vless://09abf07d-a8ea-4748-9f37-5b3dca0e0a94@yourdomain.com:443?encryption=none&security=reality&sni=www.google.com&fp=chrome&pbk=Y07pOrSNdp7YtiCXffp64UoTanx1J4LK_YX8HkHs_is&sid=01234567&type=xhttp&path=%2Fvless-xhttp-reality#VLESS-Reality-XHTTP` |
+| **VMess Reality TCP Vision** | VMess | Reality | TCP (Vision) | `vmess://eyJ2IjoiMiIsInBzIjoiVk1FU1MtUmVhbGl0eS1UQ1AtVmlzaW9uIiwiYWRkIjoieW91cmRvbWFpbi5jb20iLCJwb3J0IjoiNDQzIiwiaWQiOiI4ZTQyYjQ3OC0zYTRiLTQ4YjAtYWQyZS1hNTg2MjVhY2RhOGUiLCJhaWQiOiIwIiwibmV0IjoidGNwIiwidHlwZSI6Im5vbmUiLCJ0bHMiOiJyZWFsaXR5Iiwic25pIjoid3d3LmNpc2NvLmNvbSIsInBiayI6IlkwNHBPclNOZHA3WXRpQ1hmZnA2NFVvVGFueDFINExLX1lYOEhrSHNfaXMiLCJzaWQiOiIwMTIzNDU2NyIsImZwIjoiY2hyb21lIiwiZmxvdyI6Inh0bHMtcnByaC12aXNpb24ifQ` |
+| **VMess Reality TCP (No Flow)** | VMess | Reality | TCP | `vmess://eyJ2IjoiMiIsInBzIjoiVk1FU1MtUmVhbGl0eS1UQ1AiLCJhZGQiOiJ5b3VyZG9tYWluLmNvbSIsInBvcnQiOiI0NDMiLCJpZCI6IjhlNDJiNDc4LTNhNGItNDhiMC1hZDJlLWE1ODYyNWFjZGE4ZSIsImFpZCI6IjAiLCJuZXQiOiJ0Y3AiLCJ0eXBlIjoibm9uZSIsInRscyI6InJlYWxpdHkiLCJzbmkiOiJ3d3cuYmluZy5jb20iLCJwYmsiOiJZMDdwT3JTTmRwN1l0aUNYZmZwNjRVb1RhbngxSjRMS19ZWDhIa0hzX2lzIiwic2lkIjoiMDEyMzQ1NjciLCJmcCI6ImNocm9tZSJ9` |
+| **VMess Reality XHTTP** | VMess | Reality | XHTTP | `vmess://eyJ2IjoiMiIsInBzIjoiVk1FU1MtUmVhbGl0eS1YSFRUUCIsImFkZCI6InlvdXJkb21haW4uY29tIiwicG9ydCI6IjQ0MyIsImlkIjoiOGU0MmI0NzgtM2E0Yi00OGIwLWFkMmUtYTU4NjI1YWNkYThlIiwiYWlkIjoiMCIsIm5ldCI6InhodHRwIiwidHlwZSI6Im5vbmUiLCJ0bHMiOiJyZWFsaXR5Iiwic25pIjoid3d3LnNwZWVkdGVzdC5uZXQiLCJwYmsiOiJZMDdwT3JTTmRwN1l0aUNYZmZwNjRVb1RhbngxSjRMS19ZWDhIa0hzX2lzIiwic2lkIjoiMDEyMzQ1NjciLCJmcCI6ImNocm9tZSIsInBhdGgiOiIvdm1lc3MteGh0dHAtcmVhbGl0eSJ9` |
+| **Trojan Reality TCP** | Trojan | Reality | TCP | `trojan://140141d26c7dfa2171cf1cc460190ba2@yourdomain.com:443?security=reality&type=tcp&pbk=Y07pOrSNdp7YtiCXffp64UoTanx1J4LK_YX8HkHs_is&sni=apple.com&fp=chrome&sid=01234567#Trojan-Reality-TCP` |
+| **Trojan Reality XHTTP** | Trojan | Reality | XHTTP | `trojan://140141d26c7dfa2171cf1cc460190ba2@yourdomain.com:443?security=reality&type=xhttp&path=%2Ftrojan-xhttp-reality&pbk=Y07pOrSNdp7YtiCXffp64UoTanx1J4LK_YX8HkHs_is&sni=www.icloud.com&fp=chrome&sid=01234567#Trojan-Reality-XHTTP` |
 
 ### C. Tautan Klien Port 80 Plain (No TLS)
 
 | Skenario Protokol | Protokol | Keamanan | Transport | Tautan Impor Klien (Client Import URL) |
 | :--- | :--- | :--- | :--- | :--- |
-| **VLESS TCP Plain** | VLESS | None | TCP | `vless://09abf07d-a8ea-4748-9f37-5b3dca0e0a94@test2.tunnel.sryze.cc:80?encryption=none&security=none#VLESS-TCP-Plain` |
-| **VLESS WS Plain** | VLESS | None | WS | `vless://09abf07d-a8ea-4748-9f37-5b3dca0e0a94@test2.tunnel.sryze.cc:80?encryption=none&security=none&type=ws&path=%2Fvless-ws#VLESS-WS-Plain` |
-| **VLESS HTTPUpgrade Plain** | VLESS | None | HTTPUpgrade | `vless://09abf07d-a8ea-4748-9f37-5b3dca0e0a94@test2.tunnel.sryze.cc:80?encryption=none&security=none&type=httpupgrade&path=%2Fvless-httpupgrade#VLESS-HTTPUpgrade-Plain` |
-| **VLESS gRPC Plain** | VLESS | None | gRPC | `vless://09abf07d-a8ea-4748-9f37-5b3dca0e0a94@test2.tunnel.sryze.cc:80?encryption=none&security=none&type=grpc&serviceName=vless-grpc#VLESS-gRPC-Plain` |
-| **VLESS XHTTP Plain** | VLESS | None | XHTTP | `vless://09abf07d-a8ea-4748-9f37-5b3dca0e0a94@test2.tunnel.sryze.cc:80?encryption=none&security=none&type=xhttp&path=%2Fvless-xhttp#VLESS-XHTTP-Plain` |
-| **VMess TCP Plain** | VMess | None | TCP | `vmess://eyJ2IjoiMiIsInBzIjoiVk1FU1MtVENQLVBsYWluIiwiYWRkIjoidGVzdDIudHVubmVsLnNyeXplLmNjIiwicG9ydCI6IjgwIiwiaWQiOiI4ZTQyYjQ3OC0zYTRiLTQ4YjAtYWQyZS1hNTg2MjVhY2RhOGUiLCJhaWQiOiIwIiwibmV0IjoidGNwIiwidHlwZSI6Im5vbmUiLCJ0bHMiOiJub25lIn0=` |
-| **VMess WS Plain** | VMess | None | WS | `vmess://eyJ2IjoiMiIsInBzIjoiVk1FU1MtV1MtUGxhaW4iLCJhZGQiOiJ0ZXN0Mi50dW5uZWwuc3J5emUuY2MiLCJwb3J0IjoiODAiLCJpZCI6IjhlNDJiNDc4LTNhNGItNDhiMC1hZDJlLWE1ODYyNWFjZGE4ZSIsImFpZCI6IjAiLCJuZXQiOiJ3cyIsInR5cGUiOiJub25lIiwiaG9zdCI6InRlc3QyLnR1bm5lbC5zcnl6ZS5jYyIsInBhdGgiOiIvdm1lc3Mtd3MiLCJ0bHMiOiJub25lIn0=` |
-| **VMess HTTPUpgrade Plain** | VMess | None | HTTPUpgrade | `vmess://eyJ2IjoiMiIsInBzIjoiVk1FU1MtSFRUUFVwLVBsYWluIiwiYWRkIjoidGVzdDIudHVubmVsLnNyeXplLmNjIiwicG9ydCI6IjgwIiwiaWQiOiI4ZTQyYjQ3OC0zYTRiLTQ4YjAtYWQyZS1hNTg2MjVhY2RhOGUiLCJhaWQiOiIwIiwibmV0IjoiaHR0cHVwZ3JhZGUiLCJ0eXBlIjoibm9uZSIsImhvc3QiOiJ0ZXN0Mi50dW5uZWwuc3J5emUuY2MiLCJwYXRoIjoiL3ZtZXNzLWh0dHB1cGdyYWRlIiwidGxzIjoibm9uZSJ9` |
-| **VMess gRPC Plain** | VMess | None | gRPC | `vmess://eyJ2IjoiMiIsInBzIjoiVk1FU1MtZ1JQQy1QbGFpbiIsImFkZCI6InRlc3QyLnR1bm5lbC5zcnl6ZS5jYyIsInBvcnQiOiI4MCIsImlkIjoiOGU0MmI0NzgtM2E0Yi00OGIwLWFkMmUtYTU4NjI1YWNkYThlIiwiYWlkIjoiMCIsIm5ldCI6ImdycGMiLCJ0eXBlIjoibm9uZSIsInBhdGgiOiJ2bWVzcy1ncnBjIiwidGxzIjoibm9uZSJ9` |
-| **VMess XHTTP Plain** | VMess | None | XHTTP | `vmess://eyJ2IjoiMiIsInBzIjoiVk1FU1MtWUhUVFAtUGxhaW4iLCJhZGQiOiJ0ZXN0Mi50dW5uZWwuc3J5emUuY2MiLCJwb3J0IjoiODAiLCJpZCI6IjhlNDJiNDc4LTNhNGItNDhiMC1hZDJlLWE1ODYyNWFjZGE4ZSIsImFpZCI6IjAiLCJuZXQiOiJ4aHR0cCIsInR5cGUiOiJub25lIiwiaG9zdCI6InRlc3QyLnR1bm5lbC5zcnl6ZS5jYyIsInBhdGgiOiIvdm1lc3MteGh0dHAiLCJ0bHMiOiJub25lIn0=` |
-| **Trojan TCP Plain** | Trojan | None | TCP | `trojan://140141d26c7dfa2171cf1cc460190ba2@test2.tunnel.sryze.cc:80?security=none&type=tcp#Trojan-TCP-Plain` |
-| **Trojan WS Plain** | Trojan | None | WS | `trojan://140141d26c7dfa2171cf1cc460190ba2@test2.tunnel.sryze.cc:80?security=none&type=ws&path=%2Ftrojan-ws&host=test2.tunnel.sryze.cc#Trojan-WS-Plain` |
-| **Trojan HTTPUpgrade Plain** | Trojan | None | HTTPUpgrade | `trojan://140141d26c7dfa2171cf1cc460190ba2@test2.tunnel.sryze.cc:80?security=none&type=httpupgrade&path=%2Ftrojan-httpupgrade&host=test2.tunnel.sryze.cc#Trojan-HTTPUpgrade-Plain` |
-| **Trojan gRPC Plain** | Trojan | None | gRPC | `trojan://140141d26c7dfa2171cf1cc460190ba2@test2.tunnel.sryze.cc:80?security=none&type=grpc&serviceName=trojan-grpc#Trojan-gRPC-Plain` |
-| **Trojan XHTTP Plain** | Trojan | None | XHTTP | `trojan://140141d26c7dfa2171cf1cc460190ba2@test2.tunnel.sryze.cc:80?security=none&type=xhttp&path=%2Ftrojan-xhttp&host=test2.tunnel.sryze.cc#Trojan-XHTTP-Plain` |
+| **VLESS TCP Plain** | VLESS | None | TCP | `vless://09abf07d-a8ea-4748-9f37-5b3dca0e0a94@yourdomain.com:80?encryption=none&security=none#VLESS-TCP-Plain` |
+| **VLESS WS Plain** | VLESS | None | WS | `vless://09abf07d-a8ea-4748-9f37-5b3dca0e0a94@yourdomain.com:80?encryption=none&security=none&type=ws&path=%2Fvless-ws#VLESS-WS-Plain` |
+| **VLESS HTTPUpgrade Plain** | VLESS | None | HTTPUpgrade | `vless://09abf07d-a8ea-4748-9f37-5b3dca0e0a94@yourdomain.com:80?encryption=none&security=none&type=httpupgrade&path=%2Fvless-httpupgrade#VLESS-HTTPUpgrade-Plain` |
+| **VLESS gRPC Plain** | VLESS | None | gRPC | `vless://09abf07d-a8ea-4748-9f37-5b3dca0e0a94@yourdomain.com:80?encryption=none&security=none&type=grpc&serviceName=vless-grpc#VLESS-gRPC-Plain` |
+| **VLESS XHTTP Plain** | VLESS | None | XHTTP | `vless://09abf07d-a8ea-4748-9f37-5b3dca0e0a94@yourdomain.com:80?encryption=none&security=none&type=xhttp&path=%2Fvless-xhttp#VLESS-XHTTP-Plain` |
+| **VMess TCP Plain** | VMess | None | TCP | `vmess://eyJ2IjoiMiIsInBzIjoiVk1FU1MtVENQLVBsYWluIiwiYWRkIjoieW91cmRvbWFpbi5jb20iLCJwb3J0IjoiODAiLCJpZCI6IjhlNDJiNDc4LTNhNGItNDhiMC1hZDJlLWE1ODYyNWFjZGE4ZSIsImFpZCI6IjAiLCJuZXQiOiJ0Y3AiLCJ0eXBlIjoibm9uZSIsInRscyI6Im5vbmUifQ` |
+| **VMess WS Plain** | VMess | None | WS | `vmess://eyJ2IjoiMiIsInBzIjoiVk1FU1MtV1MtUGxhaW4iLCJhZGQiOiJ5b3VyZG9tYWluLmNvbSIsInBvcnQiOiI4MCIsImlkIjoiOGU0MmI0NzgtM2E0Yi00OGIwLWFkMmUtYTU4NjI1YWNkYThlIiwiYWlkIjoiMCIsIm5ldCI6IndzIiwidHlwZSI6Im5vbmUiLCJob3N0IjoieW91cmRvbWFpbi5jb20iLCJwYXRoIjoiL3ZtZXNzLXdzIiwidGxzIjoibm9uZSJ9` |
+| **VMess HTTPUpgrade Plain** | VMess | None | HTTPUpgrade | `vmess://eyJ2IjoiMiIsInBzIjoiVk1FU1MtSFRUUFVwLVBsYWluIiwiYWRkIjoieW91cmRvbWFpbi5jb20iLCJwb3J0IjoiODAiLCJpZCI6IjhlNDJiNDc4LTNhNGItNDhiMC1hZDJlLWE1ODYyNWFjZGE4ZSIsImFpZCI6IjAiLCJuZXQiOiJodHRwdXBncmFkZSIsInR5cGUiOiJub25lIiwiaG9zdCI6InlvdXJkb21haW4uY29tIiwicGF0aCI6Ii92bWVzcy1odHRwdXBncmFkZSIsInRscyI6Im5vbmUifQ` |
+| **VMess gRPC Plain** | VMess | None | gRPC | `vmess://eyJ2IjoiMiIsInBzIjoiVk1FU1MtZ1JQQy1QbGFpbiIsImFkZCI6InlvdXJkb21haW4uY29tIiwicG9ydCI6IjgwIiwiaWQiOiI4ZTQyYjQ3OC0zYTRiLTQ4YjAtYWQyZS1hNTg2MjVhY2RhOGUiLCJhaWQiOiIwIiwibmV0IjoiZ3JwYyIsInR5cGUiOiJub25lIiwicGF0aCI6InZtZXNzLWdycGMiLCJ0bHMiOiJub25lIn0` |
+| **VMess XHTTP Plain** | VMess | None | XHTTP | `vmess://eyJ2IjoiMiIsInBzIjoiVk1FU1MtWUhUVFAtUGxhaW4iLCJhZGQiOiJ5b3VyZG9tYWluLmNvbSIsInBvcnQiOiI4MCIsImlkIjoiOGU0MmI0NzgtM2E0Yi00OGIwLWFkMmUtYTU4NjI1YWNkYThlIiwiYWlkIjoiMCIsIm5ldCI6InhodHRwIiwidHlwZSI6Im5vbmUiLCJob3N0IjoieW91cmRvbWFpbi5jb20iLCJwYXRoIjoiL3ZtZXNzLXhodHRwIiwidGxzIjoibm9uZSJ9` |
+| **Trojan TCP Plain** | Trojan | None | TCP | `trojan://140141d26c7dfa2171cf1cc460190ba2@yourdomain.com:80?security=none&type=tcp#Trojan-TCP-Plain` |
+| **Trojan WS Plain** | Trojan | None | WS | `trojan://140141d26c7dfa2171cf1cc460190ba2@yourdomain.com:80?security=none&type=ws&path=%2Ftrojan-ws&host=yourdomain.com#Trojan-WS-Plain` |
+| **Trojan HTTPUpgrade Plain** | Trojan | None | HTTPUpgrade | `trojan://140141d26c7dfa2171cf1cc460190ba2@yourdomain.com:80?security=none&type=httpupgrade&path=%2Ftrojan-httpupgrade&host=yourdomain.com#Trojan-HTTPUpgrade-Plain` |
+| **Trojan gRPC Plain** | Trojan | None | gRPC | `trojan://140141d26c7dfa2171cf1cc460190ba2@yourdomain.com:80?security=none&type=grpc&serviceName=trojan-grpc#Trojan-gRPC-Plain` |
+| **Trojan XHTTP Plain** | Trojan | None | XHTTP | `trojan://140141d26c7dfa2171cf1cc460190ba2@yourdomain.com:80?security=none&type=xhttp&path=%2Ftrojan-xhttp&host=yourdomain.com#Trojan-XHTTP-Plain` |
 
 ---
 
@@ -351,7 +351,7 @@ Bagi pengguna yang ingin menjalankan aplikasi Xray secara langsung di sisi klien
       "settings": {
         "vnext": [
           {
-            "address": "test2.tunnel.sryze.cc",
+            "address": "yourdomain.com",
             "port": 443,
             "users": [
               {
@@ -366,12 +366,12 @@ Bagi pengguna yang ingin menjalankan aplikasi Xray secara langsung di sisi klien
         "network": "ws",
         "security": "tls",
         "tlsSettings": {
-          "serverName": "test2.tunnel.sryze.cc"
+          "serverName": "yourdomain.com"
         },
         "wsSettings": {
           "path": "/vless-ws",
           "headers": {
-            "Host": "test2.tunnel.sryze.cc"
+            "Host": "yourdomain.com"
           }
         }
       }
@@ -403,7 +403,7 @@ Bagi pengguna yang ingin menjalankan aplikasi Xray secara langsung di sisi klien
       "settings": {
         "vnext": [
           {
-            "address": "test2.tunnel.sryze.cc",
+            "address": "yourdomain.com",
             "port": 443,
             "users": [
               {
@@ -454,7 +454,7 @@ Bagi pengguna yang ingin menjalankan aplikasi Xray secara langsung di sisi klien
       "settings": {
         "vnext": [
           {
-            "address": "test2.tunnel.sryze.cc",
+            "address": "yourdomain.com",
             "port": 443,
             "users": [
               {
@@ -469,7 +469,7 @@ Bagi pengguna yang ingin menjalankan aplikasi Xray secara langsung di sisi klien
         "network": "tcp",
         "security": "tls",
         "tlsSettings": {
-          "serverName": "test2.tunnel.sryze.cc"
+          "serverName": "yourdomain.com"
         }
       }
     }
@@ -500,7 +500,7 @@ Bagi pengguna yang ingin menjalankan aplikasi Xray secara langsung di sisi klien
       "settings": {
         "servers": [
           {
-            "address": "test2.tunnel.sryze.cc",
+            "address": "yourdomain.com",
             "port": 443,
             "password": "140141d26c7dfa2171cf1cc460190ba2"
           }
@@ -510,7 +510,7 @@ Bagi pengguna yang ingin menjalankan aplikasi Xray secara langsung di sisi klien
         "network": "grpc",
         "security": "tls",
         "tlsSettings": {
-          "serverName": "test2.tunnel.sryze.cc"
+          "serverName": "yourdomain.com"
         },
         "grpcSettings": {
           "serviceName": "trojan-grpc"
