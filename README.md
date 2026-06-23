@@ -113,25 +113,25 @@ flowchart TD
 Layanan `soft-proxy` dilengkapi dengan fitur-fitur canggih untuk menjamin performa, keamanan, dan fungsionalitas tingkat tinggi:
 
 1. **Multiplexing Berbasis Protokol & SNI (SNI & Protocol-Based Multiplexing)**
-   * Mencegat lalu lintas data pada Port 80 & 443, menyaring domain SNI lewat [server.go](file:///root/proyek/soft/internal/core/server.go).
-   * Melakukan dekripsi TLS standar dan *peeking stream* (256 byte pertama via [conn.go](file:///root/proyek/soft/internal/core/conn.go)) untuk membedakan secara instan protokol VLESS, Trojan, VMess, atau HTTP (Nginx).
+   * Mencegat lalu lintas data pada Port 80 & 443, menyaring domain SNI lewat `server.go`.
+   * Melakukan dekripsi TLS standar dan *peeking stream* (256 byte pertama via `conn.go`) untuk membedakan secara instan protokol VLESS, Trojan, VMess, atau HTTP (Nginx).
 
 2. **TLS Bypass Mentah (Zero-Decryption TLS Bypass / Reality Support)**
-   * Mendukung pengalihan lalu lintas Xray Reality secara langsung (*raw TCP stream piping* via [proxy.go](file:///root/proyek/soft/internal/core/proxy.go)) ke backend port Reality tanpa mendekripsi TLS, menghemat penggunaan CPU dan mempertahankan efektivitas obfuscation XTLS-Reality.
+   * Mendukung pengalihan lalu lintas Xray Reality secara langsung (*raw TCP stream piping* via `proxy.go`) ke backend port Reality tanpa mendekripsi TLS, menghemat penggunaan CPU dan mempertahankan efektivitas obfuscation XTLS-Reality.
 
 3. **Perlindungan Terhadap Pemindaian Port (Auto-Blocker / Active Probing Protection)**
-   * Memanfaatkan modul [autoblocker.go](file:///root/proyek/soft/internal/autoblocker/autoblocker.go) untuk mendeteksi scanner atau koneksi ilegal (seperti handshake TLS parsial/gagal).
+   * Memanfaatkan modul `autoblocker.go` untuk mendeteksi scanner atau koneksi ilegal (seperti handshake TLS parsial/gagal).
    * Memblokir IP mencurigakan secara dinamis (*temporary blacklist*) dengan efisien menggunakan goroutine sweeper terpusat tanpa membebani memori server.
 
 4. **Manajemen Sertifikat ACME Terintegrasi (Automatic ACME Let's Encrypt)**
-   * Menggunakan pustaka ACME melalui [acme.go](file:///root/proyek/soft/internal/acme/acme.go) untuk menerbitkan dan memperbarui sertifikat Let's Encrypt secara otomatis (HTTP-01 challenge).
+   * Menggunakan pustaka ACME melalui `acme.go` untuk menerbitkan dan memperbarui sertifikat Let's Encrypt secara otomatis (HTTP-01 challenge).
    * Otomatis membuat sertifikat lokal (*self-signed certificate fallback*) untuk domain tidak terdaftar agar TLS Handshake port 443 tetap stabil.
 
 5. **Pemuatan Ulang Konfigurasi Tanpa Henti (Thread-Safe Hot-Reload)**
-   * Memantau berkas [config.yaml](file:///root/proyek/soft/config.yaml) secara berkala via [config.go](file:///root/proyek/soft/internal/config/config.go). Perubahan backend atau domain Reality akan dimuat secara dinamis tanpa perlu mematikan atau menghentikan koneksi aktif di server multiplexer.
+   * Memantau berkas `config.yaml` secara berkala via `config.go`. Perubahan backend atau domain Reality akan dimuat secara dinamis tanpa perlu mematikan atau menghentikan koneksi aktif di server multiplexer.
 
 6. **Pencatatan Aktivitas Terstruktur & Rotasi Log (Structured JSON Logging)**
-   * Menggunakan logger terpusat di [logger.go](file:///root/proyek/soft/internal/logger/logger.go) yang mencatat log dalam format JSON.
+   * Menggunakan logger terpusat di `logger.go` yang mencatat log dalam format JSON.
    * Mencegah kepenuhan penyimpanan disk melalui sistem *log rotation* otomatis berdasarkan ukuran berkas.
 
 ---
