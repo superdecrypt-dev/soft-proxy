@@ -1332,34 +1332,98 @@ Berikut adalah berkas konfigurasi `/etc/xray/config.json` lengkap di sisi server
 
 ## ⚙️ 9. Berkas Konfigurasi Server Nginx (Nginx Server Configuration)
 
-Berikut adalah berkas konfigurasi Nginx `/etc/nginx/sites-available/soft-proxy-fallback` yang telah diperingkas secara efisien menggunakan **Nginx map** dan **regex location matching** untuk merutekan lalu lintas WebSocket, HTTPUpgrade, gRPC, dan XHTTP ke backend Xray. Konfigurasi ini secara otomatis mendukung penggunaan **sembarang prefix teks-bebas di depan path** (contoh: `/(teks-bebas)/vless-ws`) dengan membersihkan prefix tersebut sebelum meneruskannya ke Xray, **kecuali untuk lintasan XHTTP Reality** (karena bypass Nginx dan langsung mengalir ke Xray):
+Berikut adalah berkas konfigurasi Nginx `/etc/nginx/conf.d/proxy.conf` yang telah diperingkas secara efisien menggunakan **Nginx map** dan **regex location matching** untuk merutekan lalu lintas WebSocket, HTTPUpgrade, gRPC, dan XHTTP ke backend Xray. Konfigurasi ini telah ditingkatkan dengan fitur **Upstream Keepalive**, **Rate Limiting (30r/s)**, **Camouflage Decoy Proxy (Debian.org fallback)**, dan **Unix Domain Sockets (UDS)** untuk performa maksimal dan ketahanan sensor:
 
 <details>
-<summary>▶ Tampilkan Berkas soft-proxy-fallback Lengkap</summary>
+<summary>▶ Tampilkan Berkas proxy.conf Lengkap</summary>
 
 ```nginx
-# Map path to backend port using loose regex matching (~keyword)
-# (?!-reality) digunakan untuk mengecualikan path XHTTP Reality agar tidak bentrok
-map $uri $xray_port {
-    default 0;
+# Connection upgrade mapping for WebSocket support with keepalive compatibility
+map $http_upgrade $connection_upgrade {
+    default upgrade;
+    ''      "";
+}
+
+# Rate Limiting configuration (uniquely named to avoid conflicts)
+limit_req_zone $binary_remote_addr zone=proxy_limit_zone:10m rate=30r/s;
+
+# ==================== UPSTREAM UDS POOLS WITH KEEPALIVE ====================
+
+# VLESS
+upstream xray_vless_ws {
+    server unix:/run/xray/vless-ws.sock;
+    keepalive 32;
+}
+upstream xray_vless_httpupgrade {
+    server unix:/run/xray/vless-httpupgrade.sock;
+    keepalive 32;
+}
+upstream xray_vless_grpc {
+    server unix:/run/xray/vless-grpc.sock;
+    keepalive 32;
+}
+upstream xray_vless_xhttp {
+    server unix:/run/xray/vless-xhttp.sock;
+    keepalive 32;
+}
+
+# VMess
+upstream xray_vmess_ws {
+    server unix:/run/xray/vmess-ws.sock;
+    keepalive 32;
+}
+upstream xray_vmess_httpupgrade {
+    server unix:/run/xray/vmess-httpupgrade.sock;
+    keepalive 32;
+}
+upstream xray_vmess_grpc {
+    server unix:/run/xray/vmess-grpc.sock;
+    keepalive 32;
+}
+upstream xray_vmess_xhttp {
+    server unix:/run/xray/vmess-xhttp.sock;
+    keepalive 32;
+}
+
+# Trojan
+upstream xray_trojan_ws {
+    server unix:/run/xray/trojan-ws.sock;
+    keepalive 32;
+}
+upstream xray_trojan_httpupgrade {
+    server unix:/run/xray/trojan-httpupgrade.sock;
+    keepalive 32;
+}
+upstream xray_trojan_grpc {
+    server unix:/run/xray/trojan-grpc.sock;
+    keepalive 32;
+}
+upstream xray_trojan_xhttp {
+    server unix:/run/xray/trojan-xhttp.sock;
+    keepalive 32;
+}
+
+# ==================== DYNAMIC PATH TO UPSTREAM MAPPING ====================
+map $uri $xray_upstream {
+    default "";
 
     # VLESS
-    ~vless-ws                   1235;
-    ~vless-httpupgrade          1236;
-    ~vless-grpc                 1237;
-    ~vless-xhttp(?!-reality)    1238;
+    ~vless-ws                   xray_vless_ws;
+    ~vless-httpupgrade          xray_vless_httpupgrade;
+    ~vless-grpc                 xray_vless_grpc;
+    ~vless-xhttp(?!-reality)    xray_vless_xhttp;
 
     # VMess
-    ~vmess-ws                   1335;
-    ~vmess-httpupgrade          1336;
-    ~vmess-grpc                 1337;
-    ~vmess-xhttp(?!-reality)    1338;
+    ~vmess-ws                   xray_vmess_ws;
+    ~vmess-httpupgrade          xray_vmess_httpupgrade;
+    ~vmess-grpc                 xray_vmess_grpc;
+    ~vmess-xhttp(?!-reality)    xray_vmess_xhttp;
 
     # Trojan
-    ~trojan-ws                  1435;
-    ~trojan-httpupgrade         1436;
-    ~trojan-grpc                1437;
-    ~trojan-xhttp(?!-reality)   1438;
+    ~trojan-ws                  xray_trojan_ws;
+    ~trojan-httpupgrade         xray_trojan_httpupgrade;
+    ~trojan-grpc                 xray_trojan_grpc;
+    ~trojan-xhttp(?!-reality)   xray_trojan_xhttp;
 }
 
 server {
@@ -1367,24 +1431,38 @@ server {
     http2 on;
     server_name yourdomain.com; # Ganti dengan domain Anda jika perlu
 
+    # Apply Rate Limiting
+    limit_req zone=proxy_limit_zone burst=50 nodelay;
+
+    # Camouflage Decoy Proxy: Serves local files first, falls back to proxying Debian
     location / {
         root /var/www/html;
         index index.html;
-        try_files $uri $uri/ =404;
+        try_files $uri $uri/ @decoy;
+    }
+
+    location @decoy {
+        proxy_pass https://www.debian.org;
+        proxy_set_header Host www.debian.org;
+        proxy_set_header Referer https://www.debian.org;
+        proxy_set_header Accept-Encoding "";
+        proxy_ssl_server_name on;
+        proxy_ssl_protocols TLSv1.2 TLSv1.3;
+        proxy_redirect https://www.debian.org/ /;
     }
 
     # WebSocket & HTTPUpgrade (standard HTTP proxy)
     location ~ (vless|vmess|trojan)-(ws|httpupgrade) {
-        if ($xray_port = 0) { return 404; }
+        if ($xray_upstream = "") { return 404; }
 
         # Strip sembarang prefix teks-bebas di depan path (misal: /teks-bebas/vless-ws -> /vless-ws)
         rewrite ^.*/((?:vless|vmess|trojan)-(?:ws|httpupgrade))(/.*)?$ /$1$2 break;
 
         proxy_redirect off;
-        proxy_pass http://127.0.0.1:$xray_port;
+        proxy_pass http://$xray_upstream;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
+        proxy_set_header Connection $connection_upgrade;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -1393,14 +1471,14 @@ server {
     }
 
     # gRPC & XHTTP (HTTP/2 grpc stream proxy)
-    # (?!-reality) mengecualikan path XHTTP Reality agar tidak masuk ke penanganan Nginx
+    # (?!-reality) ensures we exclude Reality xHTTP paths
     location ~ (vless|vmess|trojan)-(grpc|xhttp(?!-reality)) {
-        if ($xray_port = 0) { return 404; }
+        if ($xray_upstream = "") { return 404; }
 
         # Strip sembarang prefix teks-bebas di depan path (misal: /teks-bebas/vless-grpc/Tun -> /vless-grpc/Tun)
         rewrite ^.*/((?:vless|vmess|trojan)-(?:grpc|xhttp))(/.*)?$ /$1$2 break;
 
-        grpc_pass grpc://127.0.0.1:$xray_port;
+        grpc_pass grpc://$xray_upstream;
         grpc_read_timeout 600s;
         grpc_send_timeout 600s;
         grpc_set_header Host $host;
@@ -1408,6 +1486,627 @@ server {
         grpc_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         client_max_body_size 0;
     }
+}
+```
+</details>
+
+## ⚙️ 8. Berkas Konfigurasi Server Xray (Xray Server `config.json`)
+
+Berikut adalah berkas konfigurasi `/etc/xray/config.json` lengkap di sisi server Xray yang berjalan di belakang `soft-proxy` untuk melayani semua port backend (TCP, WS, gRPC, HTTPUpgrade, XHTTP, dan Reality):
+
+<details>
+<summary>▶ Tampilkan Berkas config.json Lengkap (622 baris)</summary>
+
+```json
+{
+  "log": {
+    "loglevel": "debug"
+  },
+  "inbounds": [
+    {
+      "listen": "127.0.0.1",
+      "port": 10085,
+      "protocol": "dokodemo-door",
+      "settings": {
+        "address": "127.0.0.1"
+      },
+      "tag": "api"
+    },
+    {
+      "listen": "127.0.0.1",
+      "port": 1234,
+      "protocol": "vless",
+      "settings": {
+        "clients": [
+          {
+            "id": "09abf07d-a8ea-4748-9f37-5b3dca0e0a94"
+          }
+        ],
+        "decryption": "none"
+      },
+      "streamSettings": {
+        "network": "tcp"
+      },
+      "tag": "inbound-vless-1234"
+    },
+    {
+      "listen": "/run/xray/vless-ws.sock",
+      "protocol": "vless",
+      "settings": {
+        "clients": [
+          {
+            "id": "09abf07d-a8ea-4748-9f37-5b3dca0e0a94"
+          }
+        ],
+        "decryption": "none"
+      },
+      "streamSettings": {
+        "network": "ws",
+        "wsSettings": {
+          "path": "/vless-ws"
+        }
+      },
+      "tag": "inbound-vless-1235"
+    },
+    {
+      "listen": "/run/xray/vless-httpupgrade.sock",
+      "protocol": "vless",
+      "settings": {
+        "clients": [
+          {
+            "id": "09abf07d-a8ea-4748-9f37-5b3dca0e0a94"
+          }
+        ],
+        "decryption": "none"
+      },
+      "streamSettings": {
+        "network": "httpupgrade",
+        "httpupgradeSettings": {
+          "path": "/vless-httpupgrade"
+        }
+      },
+      "tag": "inbound-vless-1236"
+    },
+    {
+      "listen": "/run/xray/vless-grpc.sock",
+      "protocol": "vless",
+      "settings": {
+        "clients": [
+          {
+            "id": "09abf07d-a8ea-4748-9f37-5b3dca0e0a94"
+          }
+        ],
+        "decryption": "none"
+      },
+      "streamSettings": {
+        "network": "grpc",
+        "grpcSettings": {
+          "serviceName": "vless-grpc"
+        }
+      },
+      "tag": "inbound-vless-1237"
+    },
+    {
+      "listen": "/run/xray/vless-xhttp.sock",
+      "protocol": "vless",
+      "settings": {
+        "clients": [
+          {
+            "id": "09abf07d-a8ea-4748-9f37-5b3dca0e0a94"
+          }
+        ],
+        "decryption": "none"
+      },
+      "streamSettings": {
+        "network": "xhttp",
+        "xhttpSettings": {
+          "path": "/vless-xhttp"
+        }
+      },
+      "tag": "inbound-vless-1238"
+    },
+    {
+      "listen": "127.0.0.1",
+      "port": 1334,
+      "protocol": "vmess",
+      "settings": {
+        "clients": [
+          {
+            "id": "8e42b478-3a4b-48b0-ad2e-a58625acda8e",
+            "alterId": 0
+          }
+        ]
+      },
+      "streamSettings": {
+        "network": "tcp"
+      },
+      "tag": "inbound-vmess-1334"
+    },
+    {
+      "listen": "/run/xray/vmess-ws.sock",
+      "protocol": "vmess",
+      "settings": {
+        "clients": [
+          {
+            "id": "8e42b478-3a4b-48b0-ad2e-a58625acda8e",
+            "alterId": 0
+          }
+        ]
+      },
+      "streamSettings": {
+        "network": "ws",
+        "wsSettings": {
+          "path": "/vmess-ws"
+        }
+      },
+      "tag": "inbound-vmess-1335"
+    },
+    {
+      "listen": "/run/xray/vmess-httpupgrade.sock",
+      "protocol": "vmess",
+      "settings": {
+        "clients": [
+          {
+            "id": "8e42b478-3a4b-48b0-ad2e-a58625acda8e",
+            "alterId": 0
+          }
+        ]
+      },
+      "streamSettings": {
+        "network": "httpupgrade",
+        "httpupgradeSettings": {
+          "path": "/vmess-httpupgrade"
+        }
+      },
+      "tag": "inbound-vmess-1336"
+    },
+    {
+      "listen": "/run/xray/vmess-grpc.sock",
+      "protocol": "vmess",
+      "settings": {
+        "clients": [
+          {
+            "id": "8e42b478-3a4b-48b0-ad2e-a58625acda8e",
+            "alterId": 0
+          }
+        ]
+      },
+      "streamSettings": {
+        "network": "grpc",
+        "grpcSettings": {
+          "serviceName": "vmess-grpc"
+        }
+      },
+      "tag": "inbound-vmess-1337"
+    },
+    {
+      "listen": "/run/xray/vmess-xhttp.sock",
+      "protocol": "vmess",
+      "settings": {
+        "clients": [
+          {
+            "id": "8e42b478-3a4b-48b0-ad2e-a58625acda8e",
+            "alterId": 0
+          }
+        ]
+      },
+      "streamSettings": {
+        "network": "xhttp",
+        "xhttpSettings": {
+          "path": "/vmess-xhttp"
+        }
+      },
+      "tag": "inbound-vmess-1338"
+    },
+    {
+      "listen": "127.0.0.1",
+      "port": 1434,
+      "protocol": "trojan",
+      "settings": {
+        "clients": [
+          {
+            "password": "140141d26c7dfa2171cf1cc460190ba2"
+          }
+        ]
+      },
+      "streamSettings": {
+        "network": "tcp"
+      },
+      "tag": "inbound-trojan-1434"
+    },
+    {
+      "listen": "/run/xray/trojan-ws.sock",
+      "protocol": "trojan",
+      "settings": {
+        "clients": [
+          {
+            "password": "140141d26c7dfa2171cf1cc460190ba2"
+          }
+        ]
+      },
+      "streamSettings": {
+        "network": "ws",
+        "wsSettings": {
+          "path": "/trojan-ws"
+        }
+      },
+      "tag": "inbound-trojan-1435"
+    },
+    {
+      "listen": "/run/xray/trojan-httpupgrade.sock",
+      "protocol": "trojan",
+      "settings": {
+        "clients": [
+          {
+            "password": "140141d26c7dfa2171cf1cc460190ba2"
+          }
+        ]
+      },
+      "streamSettings": {
+        "network": "httpupgrade",
+        "httpupgradeSettings": {
+          "path": "/trojan-httpupgrade"
+        }
+      },
+      "tag": "inbound-trojan-1436"
+    },
+    {
+      "listen": "/run/xray/trojan-grpc.sock",
+      "protocol": "trojan",
+      "settings": {
+        "clients": [
+          {
+            "password": "140141d26c7dfa2171cf1cc460190ba2"
+          }
+        ]
+      },
+      "streamSettings": {
+        "network": "grpc",
+        "grpcSettings": {
+          "serviceName": "trojan-grpc"
+        }
+      },
+      "tag": "inbound-trojan-1437"
+    },
+    {
+      "listen": "/run/xray/trojan-xhttp.sock",
+      "protocol": "trojan",
+      "settings": {
+        "clients": [
+          {
+            "password": "140141d26c7dfa2171cf1cc460190ba2"
+          }
+        ]
+      },
+      "streamSettings": {
+        "network": "xhttp",
+        "xhttpSettings": {
+          "path": "/trojan-xhttp"
+        }
+      },
+      "tag": "inbound-trojan-1438"
+    },
+    {
+      "listen": "127.0.0.1",
+      "port": 10443,
+      "protocol": "vless",
+      "settings": {
+        "clients": [
+          {
+            "id": "09abf07d-a8ea-4748-9f37-5b3dca0e0a94"
+          }
+        ],
+        "decryption": "none",
+        "fallbacks": [
+          {
+            "path": "/vless-ws",
+            "dest": "/run/xray/vless-ws.sock"
+          },
+          {
+            "path": "/vmess-ws",
+            "dest": "/run/xray/vmess-ws.sock"
+          },
+          {
+            "path": "/trojan-ws",
+            "dest": "/run/xray/trojan-ws.sock"
+          },
+          {
+            "dest": 1434
+          }
+        ]
+      },
+      "streamSettings": {
+        "network": "tcp",
+        "security": "tls",
+        "tlsSettings": {
+          "certificates": [
+            {
+              "certificateFile": "/root/proyek/soft/certs/selfsigned.crt",
+              "keyFile": "/root/proyek/soft/certs/selfsigned.key"
+            }
+          ]
+        }
+      },
+      "tag": "inbound-vless-10443"
+    },
+    {
+      "listen": "127.0.0.1",
+      "port": 10444,
+      "protocol": "vless",
+      "settings": {
+        "clients": [
+          {
+            "id": "e75a1d12-7c68-4971-b1fb-3f7fe767c6d6",
+            "flow": "xtls-rprx-vision"
+          }
+        ],
+        "decryption": "none"
+      },
+      "streamSettings": {
+        "network": "tcp",
+        "security": "reality",
+        "realitySettings": {
+          "show": false,
+          "dest": "yahoo.com:443",
+          "xver": 0,
+          "serverNames": [
+            "yahoo.com"
+          ],
+          "privateKey": "OAla5yCmwBv1ggP-aoMA6kyg31UrBykFC4Un0txuEG0",
+          "shortIds": [
+            "01234567",
+            "89abcdef"
+          ]
+        }
+      },
+      "tag": "inbound-vless-10444"
+    },
+    {
+      "listen": "127.0.0.1",
+      "port": 10445,
+      "protocol": "vless",
+      "settings": {
+        "clients": [
+          {
+            "id": "09abf07d-a8ea-4748-9f37-5b3dca0e0a94"
+          }
+        ],
+        "decryption": "none"
+      },
+      "streamSettings": {
+        "network": "xhttp",
+        "security": "reality",
+        "realitySettings": {
+          "show": false,
+          "dest": "www.google.com:443",
+          "xver": 0,
+          "serverNames": [
+            "www.google.com"
+          ],
+          "privateKey": "OAla5yCmwBv1ggP-aoMA6kyg31UrBykFC4Un0txuEG0",
+          "shortIds": [
+            "01234567",
+            "89abcdef"
+          ]
+        },
+        "xhttpSettings": {
+          "path": "/vless-xhttp-reality"
+        }
+      },
+      "tag": "inbound-vless-10445"
+    },
+    {
+      "listen": "127.0.0.1",
+      "port": 10446,
+      "protocol": "vless",
+      "settings": {
+        "clients": [
+          {
+            "id": "09abf07d-a8ea-4748-9f37-5b3dca0e0a94"
+          }
+        ],
+        "decryption": "none"
+      },
+      "streamSettings": {
+        "network": "tcp",
+        "security": "reality",
+        "realitySettings": {
+          "show": false,
+          "dest": "www.yahoo.com:443",
+          "xver": 0,
+          "serverNames": [
+            "www.yahoo.com"
+          ],
+          "privateKey": "OAla5yCmwBv1ggP-aoMA6kyg31UrBykFC4Un0txuEG0",
+          "shortIds": [
+            "01234567",
+            "89abcdef"
+          ]
+        }
+      },
+      "tag": "inbound-vless-10446"
+    },
+    {
+      "listen": "127.0.0.1",
+      "port": 10554,
+      "protocol": "vmess",
+      "settings": {
+        "clients": [
+          {
+            "id": "8e42b478-3a4b-48b0-ad2e-a58625acda8e"
+          }
+        ]
+      },
+      "streamSettings": {
+        "network": "tcp",
+        "security": "reality",
+        "realitySettings": {
+          "show": false,
+          "dest": "www.cisco.com:443",
+          "xver": 0,
+          "serverNames": [
+            "www.cisco.com"
+          ],
+          "privateKey": "OAla5yCmwBv1ggP-aoMA6kyg31UrBykFC4Un0txuEG0",
+          "shortIds": [
+            "01234567",
+            "89abcdef"
+          ]
+        }
+      },
+      "tag": "inbound-vmess-10554"
+    },
+    {
+      "listen": "127.0.0.1",
+      "port": 10555,
+      "protocol": "vmess",
+      "settings": {
+        "clients": [
+          {
+            "id": "8e42b478-3a4b-48b0-ad2e-a58625acda8e"
+          }
+        ]
+      },
+      "streamSettings": {
+        "network": "xhttp",
+        "security": "reality",
+        "realitySettings": {
+          "show": false,
+          "dest": "www.speedtest.net:443",
+          "xver": 0,
+          "serverNames": [
+            "www.speedtest.net"
+          ],
+          "privateKey": "OAla5yCmwBv1ggP-aoMA6kyg31UrBykFC4Un0txuEG0",
+          "shortIds": [
+            "01234567",
+            "89abcdef"
+          ]
+        },
+        "xhttpSettings": {
+          "path": "/vmess-xhttp-reality"
+        }
+      },
+      "tag": "inbound-vmess-10555"
+    },
+    {
+      "listen": "127.0.0.1",
+      "port": 10556,
+      "protocol": "vmess",
+      "settings": {
+        "clients": [
+          {
+            "id": "8e42b478-3a4b-48b0-ad2e-a58625acda8e"
+          }
+        ]
+      },
+      "streamSettings": {
+        "network": "tcp",
+        "security": "reality",
+        "realitySettings": {
+          "show": false,
+          "dest": "www.bing.com:443",
+          "xver": 0,
+          "serverNames": [
+            "www.bing.com"
+          ],
+          "privateKey": "OAla5yCmwBv1ggP-aoMA6kyg31UrBykFC4Un0txuEG0",
+          "shortIds": [
+            "01234567",
+            "89abcdef"
+          ]
+        }
+      },
+      "tag": "inbound-vmess-10556"
+    },
+    {
+      "listen": "127.0.0.1",
+      "port": 10664,
+      "protocol": "trojan",
+      "settings": {
+        "clients": [
+          {
+            "password": "140141d26c7dfa2171cf1cc460190ba2"
+          }
+        ]
+      },
+      "streamSettings": {
+        "network": "tcp",
+        "security": "reality",
+        "realitySettings": {
+          "show": false,
+          "dest": "apple.com:443",
+          "xver": 0,
+          "serverNames": [
+            "apple.com"
+          ],
+          "privateKey": "OAla5yCmwBv1ggP-aoMA6kyg31UrBykFC4Un0txuEG0",
+          "shortIds": [
+            "01234567",
+            "89abcdef"
+          ]
+        }
+      },
+      "tag": "inbound-trojan-10664"
+    },
+    {
+      "listen": "127.0.0.1",
+      "port": 10665,
+      "protocol": "trojan",
+      "settings": {
+        "clients": [
+          {
+            "password": "140141d26c7dfa2171cf1cc460190ba2"
+          }
+        ]
+      },
+      "streamSettings": {
+        "network": "xhttp",
+        "security": "reality",
+        "realitySettings": {
+          "show": false,
+          "dest": "www.icloud.com:443",
+          "xver": 0,
+          "serverNames": [
+            "www.icloud.com"
+          ],
+          "privateKey": "OAla5yCmwBv1ggP-aoMA6kyg31UrBykFC4Un0txuEG0",
+          "shortIds": [
+            "01234567",
+            "89abcdef"
+          ]
+        },
+        "xhttpSettings": {
+          "path": "/trojan-xhttp-reality"
+        }
+      },
+      "tag": "inbound-trojan-10665"
+    }
+  ],
+  "outbounds": [
+    {
+      "protocol": "freedom"
+    }
+  ],
+  "api": {
+    "services": [
+      "HandlerService",
+      "LoggerService",
+      "StatsService"
+    ],
+    "tag": "api"
+  },
+  "routing": {
+    "rules": [
+      {
+        "inboundTag": [
+          "api"
+        ],
+        "outboundTag": "api",
+        "type": "field"
+      }
+    ]
+  }
 }
 ```
 </details>
