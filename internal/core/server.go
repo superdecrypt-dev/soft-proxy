@@ -134,10 +134,10 @@ func StartHTTPSServer(bindAddr string, httpsPort int, certManager *autocert.Mana
 	keyFile := config.GetKeyFile()
 
 	if certFile == "" {
-		certFile = "/root/proyek/soft/certs/selfsigned.crt"
+		certFile = "/etc/soft-proxy/certs/selfsigned.crt"
 	}
 	if keyFile == "" {
-		keyFile = "/root/proyek/soft/certs/selfsigned.key"
+		keyFile = "/etc/soft-proxy/certs/selfsigned.key"
 	}
 
 	selfSignedCert, err := acme.EnsureSelfSignedCert(certFile, keyFile)
@@ -168,7 +168,7 @@ func StartHTTPSServer(bindAddr string, httpsPort int, certManager *autocert.Mana
 	if certManager != nil {
 		acmeConfig = certManager.TLSConfig()
 		acmeConfig.MinVersion = tls.VersionTLS13
-		acmeConfig.NextProtos = []string{"h2", "http/1.1"}
+		acmeConfig.NextProtos = []string{"h2", "http/1.1", "acme-tls/1"}
 	}
 
 	addr := fmt.Sprintf("%s:%d", bindAddr, httpsPort)

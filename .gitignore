@@ -1,7 +1,7 @@
 # Binaries
 bin/
-soft-menu
-soft-proxy
+/soft-menu
+/soft-proxy
 
 # Databases and Local State
 *.db
