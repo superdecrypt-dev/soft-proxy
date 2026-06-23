@@ -190,7 +190,7 @@ acme:
   enabled: true
   domains:
     - "test2.tunnel.sryze.cc"
-  cache_dir: "certs"
+  cache_dir: "/etc/soft-proxy/certs" # Rekomendasi direktori penyimpanan sertifikat SSL/TLS
 
 backends:
   vmess: "127.0.0.1:1334"
@@ -229,9 +229,11 @@ reality_backends:
 Kompilasi kode menggunakan Go compiler:
 ```bash
 go build -o soft-proxy main.go
+# Pindahkan biner ke lokasi standard sistem
+mv soft-proxy /usr/local/bin/
 ```
 
-Deploy sebagai systemd service `soft-proxy.service` agar selalu menyala di latar belakang:
+Deploy sebagai systemd service di `/etc/systemd/system/soft-proxy.service` agar selalu menyala di latar belakang:
 ```ini
 [Unit]
 Description=Soft Proxy Multiplexer
@@ -240,7 +242,8 @@ After=network.target
 [Service]
 Type=simple
 User=root
-ExecStart=soft-proxy
+WorkingDirectory=/etc/soft-proxy
+ExecStart=/usr/local/bin/soft-proxy
 Restart=always
 RestartSec=3
 
@@ -256,7 +259,7 @@ systemctl start soft-proxy
 ```
 Dapatkan log aktivitas koneksi secara live melalui:
 ```bash
-tail -f soft-proxy.log
+tail -f /var/log/soft-proxy/soft-proxy.log
 ```
 
 ---
