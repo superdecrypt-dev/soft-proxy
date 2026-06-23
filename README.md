@@ -219,3 +219,109 @@ Dapatkan log aktivitas koneksi secara live melalui:
 ```bash
 tail -f /var/log/soft-proxy/soft-proxy.log
 ```
+
+---
+
+## 🔍 6. Contoh Konfigurasi Klien Xray (Client Configuration Examples)
+
+Berikut adalah contoh potongan konfigurasi berkas klien Xray (`client.json`) untuk terhubung ke server multiplexer `soft-proxy`:
+
+### Contoh A: VLESS TCP + TLS (SNI Resmi dengan Sertifikat ACME)
+Konfigurasi ini melayani koneksi standar melalui port 443 dengan enkripsi TLS resmi.
+
+```json
+{
+  "log": {
+    "loglevel": "warning"
+  },
+  "inbounds": [
+    {
+      "port": 10808,
+      "listen": "127.0.0.1",
+      "protocol": "socks",
+      "settings": {
+        "auth": "noauth",
+        "udp": true
+      }
+    }
+  ],
+  "outbounds": [
+    {
+      "protocol": "vless",
+      "settings": {
+        "vnext": [
+          {
+            "address": "test2.tunnel.sryze.cc",
+            "port": 443,
+            "users": [
+              {
+                "id": "09abf07d-a8ea-4748-9f37-5b3dca0e0a94",
+                "encryption": "none"
+              }
+            ]
+          }
+        ]
+      },
+      "streamSettings": {
+        "network": "tcp",
+        "security": "tls",
+        "tlsSettings": {
+          "serverName": "test2.tunnel.sryze.cc"
+        }
+      }
+    }
+  ]
+}
+```
+
+### Contoh B: VLESS TCP + Reality Vision (TLS Bypass dengan Target SNI: yahoo.com)
+Konfigurasi ini melayani koneksi dengan tingkat keawetan sensor tinggi (Vision flow) dengan membypass handshake TLS di multiplexer secara langsung ke Xray Reality.
+
+```json
+{
+  "log": {
+    "loglevel": "warning"
+  },
+  "inbounds": [
+    {
+      "port": 10809,
+      "listen": "127.0.0.1",
+      "protocol": "socks",
+      "settings": {
+        "auth": "noauth",
+        "udp": true
+      }
+    }
+  ],
+  "outbounds": [
+    {
+      "protocol": "vless",
+      "settings": {
+        "vnext": [
+          {
+            "address": "test2.tunnel.sryze.cc",
+            "port": 443,
+            "users": [
+              {
+                "id": "e75a1d12-7c68-4971-b1fb-3f7fe767c6d6",
+                "encryption": "none",
+                "flow": "xtls-rprx-vision"
+              }
+            ]
+          }
+        ]
+      },
+      "streamSettings": {
+        "network": "tcp",
+        "security": "reality",
+        "realitySettings": {
+          "serverName": "yahoo.com",
+          "publicKey": "Y07pOrSNdp7YtiCXffp64UoTanx1J4LK_YX8HkHs_is",
+          "shortId": "01234567",
+          "fingerprint": "chrome"
+        }
+      }
+    }
+  ]
+}
+```
