@@ -222,106 +222,35 @@ tail -f /var/log/soft-proxy/soft-proxy.log
 
 ---
 
-## 🔍 6. Contoh Konfigurasi Klien Xray (Client Configuration Examples)
+## 🔍 6. Contoh Tautan Impor Klien Xray (Client Import URL Examples)
 
-Berikut adalah contoh potongan konfigurasi berkas klien Xray (`client.json`) untuk terhubung ke server multiplexer `soft-proxy`:
+Berikut adalah daftar contoh tautan impor (*URL import links*) untuk klien VPN (seperti v2rayNG, Nekobox, Shadowrocket, atau Xray CLI) agar terhubung ke server multiplexer `soft-proxy`:
 
-### Contoh A: VLESS TCP + TLS (SNI Resmi dengan Sertifikat ACME)
-Konfigurasi ini melayani koneksi standar melalui port 443 dengan enkripsi TLS resmi.
+### A. Tautan Klien Port 443 TLS (Sertifikat Let's Encrypt / ACME Valid)
 
-```json
-{
-  "log": {
-    "loglevel": "warning"
-  },
-  "inbounds": [
-    {
-      "port": 10808,
-      "listen": "127.0.0.1",
-      "protocol": "socks",
-      "settings": {
-        "auth": "noauth",
-        "udp": true
-      }
-    }
-  ],
-  "outbounds": [
-    {
-      "protocol": "vless",
-      "settings": {
-        "vnext": [
-          {
-            "address": "test2.tunnel.sryze.cc",
-            "port": 443,
-            "users": [
-              {
-                "id": "09abf07d-a8ea-4748-9f37-5b3dca0e0a94",
-                "encryption": "none"
-              }
-            ]
-          }
-        ]
-      },
-      "streamSettings": {
-        "network": "tcp",
-        "security": "tls",
-        "tlsSettings": {
-          "serverName": "test2.tunnel.sryze.cc"
-        }
-      }
-    }
-  ]
-}
-```
+| Skenario Protokol | Protokol | Keamanan | Transport | Tautan Impor Klien (Client Import URL) |
+| :--- | :--- | :--- | :--- | :--- |
+| **VLESS TCP + TLS** | VLESS | TLS | TCP | `vless://09abf07d-a8ea-4748-9f37-5b3dca0e0a94@test2.tunnel.sryze.cc:443?encryption=none&security=tls&sni=test2.tunnel.sryze.cc#VLESS-TCP-TLS` |
+| **VLESS WebSocket + TLS** | VLESS | TLS | WS | `vless://09abf07d-a8ea-4748-9f37-5b3dca0e0a94@test2.tunnel.sryze.cc:443?encryption=none&security=tls&sni=test2.tunnel.sryze.cc&type=ws&path=%2Fvless-ws#VLESS-WS-TLS` |
+| **VLESS HTTPUpgrade + TLS** | VLESS | TLS | HTTPUpgrade | `vless://09abf07d-a8ea-4748-9f37-5b3dca0e0a94@test2.tunnel.sryze.cc:443?encryption=none&security=tls&sni=test2.tunnel.sryze.cc&type=httpupgrade&path=%2Fvless-httpupgrade#VLESS-HTTPUpgrade-TLS` |
+| **VLESS gRPC + TLS** | VLESS | TLS | gRPC | `vless://09abf07d-a8ea-4748-9f37-5b3dca0e0a94@test2.tunnel.sryze.cc:443?encryption=none&security=tls&sni=test2.tunnel.sryze.cc&type=grpc&serviceName=vless-grpc#VLESS-gRPC-TLS` |
+| **VLESS XHTTP + TLS** | VLESS | TLS | XHTTP | `vless://09abf07d-a8ea-4748-9f37-5b3dca0e0a94@test2.tunnel.sryze.cc:443?encryption=none&security=tls&sni=test2.tunnel.sryze.cc&type=xhttp&path=%2Fvless-xhttp#VLESS-XHTTP-TLS` |
+| **Trojan TCP + TLS** | Trojan | TLS | TCP | `trojan://140141d26c7dfa2171cf1cc460190ba2@test2.tunnel.sryze.cc:443?security=tls&type=tcp&sni=test2.tunnel.sryze.cc#Trojan-TCP-TLS` |
+| **Trojan WebSocket + TLS** | Trojan | TLS | WS | `trojan://140141d26c7dfa2171cf1cc460190ba2@test2.tunnel.sryze.cc:443?security=tls&type=ws&path=%2Ftrojan-ws&host=test2.tunnel.sryze.cc&sni=test2.tunnel.sryze.cc#Trojan-WS-TLS` |
 
-### Contoh B: VLESS TCP + Reality Vision (TLS Bypass dengan Target SNI: yahoo.com)
-Konfigurasi ini melayani koneksi dengan tingkat keawetan sensor tinggi (Vision flow) dengan membypass handshake TLS di multiplexer secara langsung ke Xray Reality.
+### B. Tautan Klien Port 443 Reality (TLS Bypass)
 
-```json
-{
-  "log": {
-    "loglevel": "warning"
-  },
-  "inbounds": [
-    {
-      "port": 10809,
-      "listen": "127.0.0.1",
-      "protocol": "socks",
-      "settings": {
-        "auth": "noauth",
-        "udp": true
-      }
-    }
-  ],
-  "outbounds": [
-    {
-      "protocol": "vless",
-      "settings": {
-        "vnext": [
-          {
-            "address": "test2.tunnel.sryze.cc",
-            "port": 443,
-            "users": [
-              {
-                "id": "e75a1d12-7c68-4971-b1fb-3f7fe767c6d6",
-                "encryption": "none",
-                "flow": "xtls-rprx-vision"
-              }
-            ]
-          }
-        ]
-      },
-      "streamSettings": {
-        "network": "tcp",
-        "security": "reality",
-        "realitySettings": {
-          "serverName": "yahoo.com",
-          "publicKey": "Y07pOrSNdp7YtiCXffp64UoTanx1J4LK_YX8HkHs_is",
-          "shortId": "01234567",
-          "fingerprint": "chrome"
-        }
-      }
-    }
-  ]
-}
-```
+| Skenario Protokol | Protokol | Keamanan | Transport | Tautan Impor Klien (Client Import URL) |
+| :--- | :--- | :--- | :--- | :--- |
+| **VLESS Reality TCP Vision** | VLESS | Reality | TCP (Vision) | `vless://e75a1d12-7c68-4971-b1fb-3f7fe767c6d6@test2.tunnel.sryze.cc:443?encryption=none&security=reality&sni=yahoo.com&fp=chrome&pbk=Y07pOrSNdp7YtiCXffp64UoTanx1J4LK_YX8HkHs_is&sid=01234567&flow=xtls-rprx-vision#VLESS-Reality-Vision` |
+| **VLESS Reality TCP (No Flow)** | VLESS | Reality | TCP | `vless://09abf07d-a8ea-4748-9f37-5b3dca0e0a94@test2.tunnel.sryze.cc:443?encryption=none&security=reality&sni=www.yahoo.com&fp=chrome&pbk=Y07pOrSNdp7YtiCXffp64UoTanx1J4LK_YX8HkHs_is&sid=01234567#VLESS-Reality-None` |
+| **VLESS Reality XHTTP** | VLESS | Reality | XHTTP | `vless://09abf07d-a8ea-4748-9f37-5b3dca0e0a94@test2.tunnel.sryze.cc:443?encryption=none&security=reality&sni=www.google.com&fp=chrome&pbk=Y07pOrSNdp7YtiCXffp64UoTanx1J4LK_YX8HkHs_is&sid=01234567&type=xhttp&path=%2Fvless-xhttp-reality#VLESS-Reality-XHTTP` |
+
+### C. Tautan Klien Port 80 Plain (No TLS)
+
+| Skenario Protokol | Protokol | Keamanan | Transport | Tautan Impor Klien (Client Import URL) |
+| :--- | :--- | :--- | :--- | :--- |
+| **VLESS TCP Plain** | VLESS | None | TCP | `vless://09abf07d-a8ea-4748-9f37-5b3dca0e0a94@test2.tunnel.sryze.cc:80?encryption=none&security=none#VLESS-TCP-Plain` |
+| **VLESS WS Plain** | VLESS | None | WS | `vless://09abf07d-a8ea-4748-9f37-5b3dca0e0a94@test2.tunnel.sryze.cc:80?encryption=none&security=none&type=ws&path=%2Fvless-ws#VLESS-WS-Plain` |
+| **VLESS gRPC Plain** | VLESS | None | gRPC | `vless://09abf07d-a8ea-4748-9f37-5b3dca0e0a94@test2.tunnel.sryze.cc:80?encryption=none&security=none&type=grpc&serviceName=vless-grpc#VLESS-gRPC-Plain` |
+
