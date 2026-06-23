@@ -1330,6 +1330,170 @@ Berikut adalah berkas konfigurasi `/etc/xray/config.json` lengkap di sisi server
 ```
 </details>
 
+## ⚙️ 9. Berkas Konfigurasi Server Nginx (Nginx Server Configuration)
+
+Berikut adalah berkas konfigurasi Nginx `/etc/nginx/sites-available/soft-proxy-fallback` yang digunakan sebagai server kamuflase (web server utama) sekaligus reverse-proxy untuk mengalirkan lalu lintas WebSocket, HTTPUpgrade, gRPC, dan XHTTP ke backend Xray:
+
+<details>
+<summary>▶ Tampilkan Berkas soft-proxy-fallback Lengkap</summary>
+
+```nginx
+server {
+    listen 127.0.0.1:8080;
+    http2 on;
+    server_name yourdomain.com;
+
+    location / {
+        root /var/www/html;
+        index index.html;
+        try_files $uri $uri/ =404;
+    }
+
+    # WebSocket
+    location /vless-ws {
+        proxy_redirect off;
+        proxy_pass http://127.0.0.1:1235;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_read_timeout 600s;
+        proxy_send_timeout 600s;
+    }
+
+    location /vmess-ws {
+        proxy_redirect off;
+        proxy_pass http://127.0.0.1:1335;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_read_timeout 600s;
+        proxy_send_timeout 600s;
+    }
+
+    location /trojan-ws {
+        proxy_redirect off;
+        proxy_pass http://127.0.0.1:1435;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_read_timeout 600s;
+        proxy_send_timeout 600s;
+    }
+
+    # HTTPUpgrade
+    location /vless-httpupgrade {
+        proxy_redirect off;
+        proxy_pass http://127.0.0.1:1236;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_read_timeout 600s;
+        proxy_send_timeout 600s;
+    }
+
+    location /vmess-httpupgrade {
+        proxy_redirect off;
+        proxy_pass http://127.0.0.1:1336;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_read_timeout 600s;
+        proxy_send_timeout 600s;
+    }
+
+    location /trojan-httpupgrade {
+        proxy_redirect off;
+        proxy_pass http://127.0.0.1:1436;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_read_timeout 600s;
+        proxy_send_timeout 600s;
+    }
+
+    # gRPC
+    location /vless-grpc {
+        grpc_pass grpc://127.0.0.1:1237;
+        grpc_read_timeout 600s;
+        grpc_send_timeout 600s;
+        client_max_body_size 0;
+    }
+
+    location /vmess-grpc {
+        grpc_pass grpc://127.0.0.1:1337;
+        grpc_read_timeout 600s;
+        grpc_send_timeout 600s;
+        client_max_body_size 0;
+    }
+
+    location /trojan-grpc {
+        grpc_pass grpc://127.0.0.1:1437;
+        grpc_read_timeout 600s;
+        grpc_send_timeout 600s;
+        client_max_body_size 0;
+    }
+
+    # XHTTP
+    location /vless-xhttp {
+        proxy_redirect off;
+        proxy_pass http://127.0.0.1:1238;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_read_timeout 600s;
+        proxy_send_timeout 600s;
+    }
+
+    location /vmess-xhttp {
+        proxy_redirect off;
+        proxy_pass http://127.0.0.1:1338;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_read_timeout 600s;
+        proxy_send_timeout 600s;
+    }
+
+    location /trojan-xhttp {
+        proxy_redirect off;
+        proxy_pass http://127.0.0.1:1438;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_read_timeout 600s;
+        proxy_send_timeout 600s;
+    }
+}
+```
+</details>
+
 ---
 
 ## 📄 Lisensi (License)
