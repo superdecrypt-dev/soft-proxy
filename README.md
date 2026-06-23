@@ -1332,16 +1332,39 @@ Berikut adalah berkas konfigurasi `/etc/xray/config.json` lengkap di sisi server
 
 ## ⚙️ 9. Berkas Konfigurasi Server Nginx (Nginx Server Configuration)
 
-Berikut adalah berkas konfigurasi Nginx `/etc/nginx/sites-available/soft-proxy-fallback` yang digunakan sebagai server kamuflase (web server utama) sekaligus reverse-proxy untuk mengalirkan lalu lintas WebSocket, HTTPUpgrade, gRPC, dan XHTTP ke backend Xray:
+Berikut adalah berkas konfigurasi Nginx `/etc/nginx/sites-available/soft-proxy-fallback` yang telah diperingkas secara efisien menggunakan **Nginx map** dan **regex location matching** untuk merutekan lalu lintas WebSocket, HTTPUpgrade, gRPC, dan XHTTP ke backend Xray:
 
 <details>
 <summary>▶ Tampilkan Berkas soft-proxy-fallback Lengkap</summary>
 
 ```nginx
+# Map path to backend port using regex prefix matching (~^)
+map $uri $xray_port {
+    default 0;
+
+    # VLESS
+    ~^/vless-ws          1235;
+    ~^/vless-httpupgrade 1236;
+    ~^/vless-grpc        1237;
+    ~^/vless-xhttp       1238;
+
+    # VMess
+    ~^/vmess-ws          1335;
+    ~^/vmess-httpupgrade 1336;
+    ~^/vmess-grpc        1337;
+    ~^/vmess-xhttp       1338;
+
+    # Trojan
+    ~^/trojan-ws          1435;
+    ~^/trojan-httpupgrade 1436;
+    ~^/trojan-grpc        1437;
+    ~^/trojan-xhttp       1438;
+}
+
 server {
     listen 127.0.0.1:8080;
     http2 on;
-    server_name yourdomain.com;
+    server_name yourdomain.com; # Ganti dengan domain Anda jika perlu
 
     location / {
         root /var/www/html;
@@ -1349,10 +1372,11 @@ server {
         try_files $uri $uri/ =404;
     }
 
-    # WebSocket
-    location /vless-ws {
+    # WebSocket & HTTPUpgrade (standard HTTP proxy)
+    location ~ ^/(vless|vmess|trojan)-(ws|httpupgrade)(?:/|$) {
+        if ($xray_port = 0) { return 404; }
         proxy_redirect off;
-        proxy_pass http://127.0.0.1:1235;
+        proxy_pass http://127.0.0.1:$xray_port;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
@@ -1363,117 +1387,10 @@ server {
         proxy_send_timeout 600s;
     }
 
-    location /vmess-ws {
-        proxy_redirect off;
-        proxy_pass http://127.0.0.1:1335;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_read_timeout 600s;
-        proxy_send_timeout 600s;
-    }
-
-    location /trojan-ws {
-        proxy_redirect off;
-        proxy_pass http://127.0.0.1:1435;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_read_timeout 600s;
-        proxy_send_timeout 600s;
-    }
-
-    # HTTPUpgrade
-    location /vless-httpupgrade {
-        proxy_redirect off;
-        proxy_pass http://127.0.0.1:1236;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_read_timeout 600s;
-        proxy_send_timeout 600s;
-    }
-
-    location /vmess-httpupgrade {
-        proxy_redirect off;
-        proxy_pass http://127.0.0.1:1336;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_read_timeout 600s;
-        proxy_send_timeout 600s;
-    }
-
-    location /trojan-httpupgrade {
-        proxy_redirect off;
-        proxy_pass http://127.0.0.1:1436;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_read_timeout 600s;
-        proxy_send_timeout 600s;
-    }
-
-    # gRPC
-    location /vless-grpc {
-        grpc_pass grpc://127.0.0.1:1237;
-        grpc_read_timeout 600s;
-        grpc_send_timeout 600s;
-        client_max_body_size 0;
-    }
-
-    location /vmess-grpc {
-        grpc_pass grpc://127.0.0.1:1337;
-        grpc_read_timeout 600s;
-        grpc_send_timeout 600s;
-        client_max_body_size 0;
-    }
-
-    location /trojan-grpc {
-        grpc_pass grpc://127.0.0.1:1437;
-        grpc_read_timeout 600s;
-        grpc_send_timeout 600s;
-        client_max_body_size 0;
-    }
-
-    # XHTTP
-    location /vless-xhttp {
-        grpc_pass grpc://127.0.0.1:1238;
-        grpc_read_timeout 600s;
-        grpc_send_timeout 600s;
-        grpc_set_header Host $host;
-        grpc_set_header X-Real-IP $remote_addr;
-        grpc_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        client_max_body_size 0;
-    }
-
-    location /vmess-xhttp {
-        grpc_pass grpc://127.0.0.1:1338;
-        grpc_read_timeout 600s;
-        grpc_send_timeout 600s;
-        grpc_set_header Host $host;
-        grpc_set_header X-Real-IP $remote_addr;
-        grpc_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        client_max_body_size 0;
-    }
-
-    location /trojan-xhttp {
-        grpc_pass grpc://127.0.0.1:1438;
+    # gRPC & XHTTP (HTTP/2 grpc stream proxy)
+    location ~ ^/(vless|vmess|trojan)-(grpc|xhttp)(?:/|$) {
+        if ($xray_port = 0) { return 404; }
+        grpc_pass grpc://127.0.0.1:$xray_port;
         grpc_read_timeout 600s;
         grpc_send_timeout 600s;
         grpc_set_header Host $host;
