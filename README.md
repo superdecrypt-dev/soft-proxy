@@ -1,8 +1,38 @@
 # Soft-Proxy: Multiplexer Server
 
-Soft-Proxy adalah layanan **Multiplexer Server** (port-sharing) cerdas berbasis bahasa Go yang menggabungkan berbagai protokol proxy (VLESS, VMess, Trojan, Reality) ke dalam port publik tunggal (Port 80 untuk HTTP, Port 443 untuk HTTPS/TLS).
+Soft-Proxy adalah layanan **Multiplexer Server** (port-sharing) cerdas berbasis bahasa Go yang didesain untuk menyatukan berbagai protokol proxy (VLESS, VMess, Trojan, Reality) ke dalam port publik tunggal (Port 80 untuk HTTP, Port 443 untuk HTTPS/TLS).
 
-Dokumentasi ini diselaraskan sepenuhnya dengan [arsitektur_soft_proxy.md](file:///root/.gemini/antigravity-cli/brain/457dd5e1-142e-4cb1-bf85-8cf9bb9095ff/arsitektur_soft_proxy.md) untuk menyajikan panduan arsitektur, pemetaan port, konfigurasi, dan pengujian konektivitas secara presisi.
+Sistem ini didesain khusus untuk dijalankan di VPS linux dengan tingkat kehandalan tinggi, keamanan dari serangan Denial of Service (DoS) dan kebocoran memori, serta kompatibilitas penuh dengan bypass SSL/TLS SNI untuk protokol modern.
+
+---
+
+## 📂 Struktur Proyek (Project Structure)
+
+Berikut adalah struktur folder dan berkas proyek Soft-Proxy beserta penjelasannya:
+
+```text
+soft/
+├── cmd/
+│   └── soft-proxy/            # Kode utama layanan server multiplexer
+│       └── main.go
+├── internal/                  # Package internal pendukung (Reusable modules)
+│   ├── acme/                  # Integrasi tantangan ACME Let's Encrypt (HTTP & Cloudflare DNS)
+│   │   └── acme.go
+│   ├── autoblocker/           # Modul auto-blocker untuk mengamankan port dari scanner/probing
+│   │   └── autoblocker.go
+│   ├── config/                # Modul pemuatan & hot-reload otomatis berkas config.yaml
+│   │   └── config.go
+│   ├── core/                  # Engine utama multiplexing TLS, HTTP, WebSocket & sniffing SNI
+│   │   ├── conn.go
+│   │   ├── proxy.go
+│   │   └── server.go
+│   └── logger/                # Logging JSON & rotasi otomatis ukuran berkas log
+│       └── logger.go
+├── config.yaml                # Berkas konfigurasi utama untuk backends & domain
+├── go.mod                     # Go Modules file dependensi
+├── go.sum                     # Checksum dependensi Go
+└── .gitignore                 # Daftar berkas yang diabaikan oleh Git (certs, log)
+```
 
 ---
 
