@@ -1332,33 +1332,34 @@ Berikut adalah berkas konfigurasi `/etc/xray/config.json` lengkap di sisi server
 
 ## ⚙️ 9. Berkas Konfigurasi Server Nginx (Nginx Server Configuration)
 
-Berikut adalah berkas konfigurasi Nginx `/etc/nginx/sites-available/soft-proxy-fallback` yang telah diperingkas secara efisien menggunakan **Nginx map** dan **regex location matching** untuk merutekan lalu lintas WebSocket, HTTPUpgrade, gRPC, dan XHTTP ke backend Xray. Konfigurasi ini juga secara otomatis mendukung penggunaan **sembarang prefix teks-bebas di depan path** (contoh: `/(teks-bebas)/vless-ws`) dengan membersihkan prefix tersebut sebelum meneruskannya ke Xray:
+Berikut adalah berkas konfigurasi Nginx `/etc/nginx/sites-available/soft-proxy-fallback` yang telah diperingkas secara efisien menggunakan **Nginx map** dan **regex location matching** untuk merutekan lalu lintas WebSocket, HTTPUpgrade, gRPC, dan XHTTP ke backend Xray. Konfigurasi ini secara otomatis mendukung penggunaan **sembarang prefix teks-bebas di depan path** (contoh: `/(teks-bebas)/vless-ws`) dengan membersihkan prefix tersebut sebelum meneruskannya ke Xray, **kecuali untuk lintasan XHTTP Reality** (karena bypass Nginx dan langsung mengalir ke Xray):
 
 <details>
 <summary>▶ Tampilkan Berkas soft-proxy-fallback Lengkap</summary>
 
 ```nginx
 # Map path to backend port using loose regex matching (~keyword)
+# (?!-reality) digunakan untuk mengecualikan path XHTTP Reality agar tidak bentrok
 map $uri $xray_port {
     default 0;
 
     # VLESS
-    ~vless-ws          1235;
-    ~vless-httpupgrade 1236;
-    ~vless-grpc        1237;
-    ~vless-xhttp       1238;
+    ~vless-ws                   1235;
+    ~vless-httpupgrade          1236;
+    ~vless-grpc                 1237;
+    ~vless-xhttp(?!-reality)    1238;
 
     # VMess
-    ~vmess-ws          1335;
-    ~vmess-httpupgrade 1336;
-    ~vmess-grpc        1337;
-    ~vmess-xhttp       1338;
+    ~vmess-ws                   1335;
+    ~vmess-httpupgrade          1336;
+    ~vmess-grpc                 1337;
+    ~vmess-xhttp(?!-reality)    1338;
 
     # Trojan
-    ~trojan-ws          1435;
-    ~trojan-httpupgrade 1436;
-    ~trojan-grpc        1437;
-    ~trojan-xhttp       1438;
+    ~trojan-ws                  1435;
+    ~trojan-httpupgrade         1436;
+    ~trojan-grpc                1437;
+    ~trojan-xhttp(?!-reality)   1438;
 }
 
 server {
@@ -1392,7 +1393,8 @@ server {
     }
 
     # gRPC & XHTTP (HTTP/2 grpc stream proxy)
-    location ~ (vless|vmess|trojan)-(grpc|xhttp) {
+    # (?!-reality) mengecualikan path XHTTP Reality agar tidak masuk ke penanganan Nginx
+    location ~ (vless|vmess|trojan)-(grpc|xhttp(?!-reality)) {
         if ($xray_port = 0) { return 404; }
 
         # Strip sembarang prefix teks-bebas di depan path (misal: /teks-bebas/vless-grpc/Tun -> /vless-grpc/Tun)
