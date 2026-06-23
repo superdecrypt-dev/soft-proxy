@@ -116,6 +116,12 @@ func StartHTTPServer(bindAddr string, httpPort int, certManager *autocert.Manage
 				return
 			}
 
+			if protocol == "" {
+				logger.Warn("Unknown protocol from %s on port 80, closing", c.RemoteAddr().String())
+				_ = c.Close()
+				return
+			}
+
 			logger.Info("Detected protocol on port 80: %s (no TLS) from %s", protocol, c.RemoteAddr().String())
 			backendAddr, ok := config.GetBackend(protocol)
 			if !ok {
@@ -277,12 +283,20 @@ func handleTLSConn(conn net.Conn, selfSignedConfig *tls.Config, acmeConfig *tls.
 	protocol := DetectProtocol(peekBytes)
 	logger.Info("Detected protocol: %s (peek length: %d) from %s", protocol, len(peekBytes), conn.RemoteAddr().String())
 
+	if protocol == "" {
+		logger.Warn("Unknown protocol from %s after TLS, closing", conn.RemoteAddr().String())
+		autoblocker.RecordFailure(ip)
+		_ = tlsConn.Close()
+		return
+	}
+
 	backendAddr, ok := config.GetBackend(protocol)
 	if !ok {
 		if fallback, exists := config.GetBackend("http"); exists {
 			backendAddr = fallback
 		} else {
 			logger.Warn("No backend configured for protocol: %s", protocol)
+			autoblocker.RecordFailure(ip)
 			_ = tlsConn.Close()
 			return
 		}

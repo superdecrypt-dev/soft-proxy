@@ -95,7 +95,7 @@ func isCertValid(certPath string) bool {
 	if err != nil {
 		return false
 	}
-	return time.Now().Add(30 * 24 * time.Hour).Before(cert.NotAfter)
+	return time.Now().Add(7 * 24 * time.Hour).Before(cert.NotAfter)
 }
 
 func requestLegoCert(email, domain, token, cacheDir string) error {
@@ -105,7 +105,12 @@ func requestLegoCert(email, domain, token, cacheDir string) error {
 	if err == nil {
 		block, _ := pem.Decode(keyData)
 		if block != nil {
-			privateKey, _ = x509.ParseECPrivateKey(block.Bytes)
+			privateKey, err = x509.ParseECPrivateKey(block.Bytes)
+			if err != nil {
+				if pk, pkErr := x509.ParsePKCS8PrivateKey(block.Bytes); pkErr == nil {
+					privateKey = pk.(crypto.PrivateKey)
+				}
+			}
 		}
 	}
 

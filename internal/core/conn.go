@@ -28,8 +28,7 @@ func (c *PeakableConn) Peek(n int) ([]byte, error) {
 	needed := n - len(c.peekBuf)
 	if needed > 0 {
 		buf := make([]byte, needed)
-		origDeadline := time.Now().Add(3 * time.Second)
-		_ = c.Conn.SetReadDeadline(origDeadline)
+		_ = c.Conn.SetReadDeadline(time.Now().Add(3 * time.Second))
 
 		rn, err := c.Conn.Read(buf)
 		_ = c.Conn.SetReadDeadline(time.Time{})
@@ -70,6 +69,9 @@ func (c *PeakableConn) PeekTLSRecord() ([]byte, error) {
 	}
 
 	recordLen := int(c.peekBuf[3])<<8 | int(c.peekBuf[4])
+	if recordLen > 16384 {
+		recordLen = 16384
+	}
 	totalLen := 5 + recordLen
 
 	for len(c.peekBuf) < totalLen {
@@ -115,6 +117,7 @@ func (l *ChanListener) Accept() (net.Conn, error) {
 }
 
 func (l *ChanListener) Close() error {
+	close(l.connChan)
 	return nil
 }
 
@@ -175,8 +178,8 @@ func ParseHTTPPath(data []byte) string {
 		lineEnd = bytes.Index(data, []byte("\n"))
 	}
 	if lineEnd == -1 {
-		return ""
-	}
+	return "vmess"
+}
 	firstLine := data[:lineEnd]
 	parts := bytes.Split(firstLine, []byte(" "))
 	if len(parts) >= 2 {

@@ -34,6 +34,7 @@ type Config struct {
 
 var (
 	ConfigPath      = "config.yaml"
+	reloadMu        sync.Mutex
 	realityLookup   = make(map[string]string)
 	realityLookupMu sync.RWMutex
 
@@ -44,6 +45,9 @@ var (
 )
 
 func ReloadConfig() error {
+	reloadMu.Lock()
+	defer reloadMu.Unlock()
+
 	configMu.RLock()
 	path := ConfigPath
 	configMu.RUnlock()
@@ -64,9 +68,7 @@ func ReloadConfig() error {
 	configMu.Unlock()
 
 	realityLookupMu.Lock()
-	for k := range realityLookup {
-		delete(realityLookup, k)
-	}
+	clear(realityLookup)
 	for backend, domains := range newCfg.RealityBackends {
 		for _, domain := range domains {
 			realityLookup[domain] = backend

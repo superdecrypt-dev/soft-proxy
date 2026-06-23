@@ -107,17 +107,22 @@ func forwardToBackend(clientConn net.Conn, backendAddr string) {
 	go func() {
 		_, _ = io.Copy(backendConn, clientConn)
 		_ = backendConn.Close()
-		_ = clientConn.Close()
 	}()
 	go func() {
 		_, _ = io.Copy(clientConn, backendConn)
 		_ = clientConn.Close()
-		_ = backendConn.Close()
 	}()
 }
 
 func proxyHTTP(w http.ResponseWriter, r *http.Request, backendAddr string) {
-	transport := &http.Transport{}
+	transport := &http.Transport{
+		DialContext: (&net.Dialer{
+			Timeout: 10 * time.Second,
+		}).DialContext,
+		ResponseHeaderTimeout: 10 * time.Second,
+		IdleConnTimeout:       90 * time.Second,
+		MaxIdleConns:          100,
+	}
 	outReq, err := http.NewRequest(r.Method, "http://"+backendAddr+r.URL.RequestURI(), r.Body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -164,7 +169,6 @@ func proxyWebSocket(w http.ResponseWriter, r *http.Request, backendAddr string) 
 	}
 	defer clientConn.Close()
 
-	r.RequestURI = ""
 	if r.URL.Scheme == "" {
 		r.URL.Scheme = "http"
 	}
@@ -188,5 +192,8 @@ func proxyWebSocket(w http.ResponseWriter, r *http.Request, backendAddr string) 
 		errChan <- err
 	}()
 
+	<-errChan
+	_ = clientConn.Close()
+	_ = backendConn.Close()
 	<-errChan
 }
