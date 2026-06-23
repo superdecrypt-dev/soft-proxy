@@ -1,0 +1,22 @@
+# Binaries
+bin/
+soft-menu
+soft-proxy
+
+# Databases and Local State
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+
+# Certificates
+certs/
+
+# Logs and Temp files
+*.log
+test-adu.json
+
+# IDEs
+.idea/
+.vscode/
+.DS_Store

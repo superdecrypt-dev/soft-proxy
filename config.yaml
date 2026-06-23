@@ -1,0 +1,32 @@
+bind_addr: "0.0.0.0"
+http_port: 80
+https_port: 443
+acme:
+  enabled: true
+  domains:
+    - "test2.tunnel.sryze.cc"
+  cache_dir: "./certs"
+backends:
+  vmess: "127.0.0.1:1334"
+  vless: "127.0.0.1:1234"
+  trojan: "127.0.0.1:1434"
+  http: "127.0.0.1:8080"
+
+reality_backends:
+  "127.0.0.1:10444":
+    - "yahoo.com"
+  "127.0.0.1:10445":
+    - "www.google.com"
+  "127.0.0.1:10446":
+    - "www.yahoo.com"
+  "127.0.0.1:10554":
+    - "www.cisco.com"
+  "127.0.0.1:10555":
+    - "www.speedtest.net"
+  "127.0.0.1:10556":
+    - "www.bing.com"
+  "127.0.0.1:10664":
+    - "apple.com"
+  "127.0.0.1:10665":
+    - "www.icloud.com"
+
