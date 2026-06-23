@@ -124,9 +124,11 @@ Layanan `soft-proxy` dilengkapi dengan fitur-fitur canggih untuk menjamin perfor
    * Memanfaatkan modul `autoblocker.go` untuk mendeteksi scanner atau koneksi ilegal (seperti handshake TLS parsial/gagal).
    * Memblokir IP mencurigakan secara dinamis (*temporary blacklist*) dengan efisien menggunakan goroutine sweeper terpusat tanpa membebani memori server.
 
-4. **Manajemen Sertifikat ACME Terintegrasi (Automatic ACME Let's Encrypt)**
-   * Menggunakan pustaka ACME melalui `acme.go` untuk menerbitkan dan memperbarui sertifikat Let's Encrypt secara otomatis (HTTP-01 challenge).
-   * Otomatis membuat sertifikat lokal (*self-signed certificate fallback*) untuk domain tidak terdaftar agar TLS Handshake port 443 tetap stabil.
+4. **Manajemen Sertifikat ACME Terintegrasi (Automatic ACME Single & Multi-Domain Certs)**
+   * **Single-Domain Certs:** Mengajukan sertifikat Let's Encrypt secara otomatis untuk domain tunggal yang terdaftar pada konfigurasi.
+   * **Multi-Domain Certs (Multi-Tenancy):** Mengelola sertifikat terpisah untuk banyak domain secara bersamaan. `soft-proxy` memilih sertifikat secara dinamis berdasarkan SNI klien saat jabat tangan TLS berlangsung.
+   * **Wildcard Certs Support:** Mendukung pencocokan otomatis sertifikat wildcard (`*.domain.com` disimpan sebagai `_wildcard.domain.com.crt`) jika kecocokan SNI secara tepat tidak ditemukan.
+   * **Fallback Self-Signed:** Otomatis membuat sertifikat mandiri (*self-signed certificate fallback*) untuk domain tidak terdaftar agar TLS Handshake port 443 tetap stabil.
 
 5. **Pemuatan Ulang Konfigurasi Tanpa Henti (Thread-Safe Hot-Reload)**
    * Memantau berkas `config.yaml` secara berkala via `config.go`. Perubahan backend atau domain Reality akan dimuat secara dinamis tanpa perlu mematikan atau menghentikan koneksi aktif di server multiplexer.
