@@ -1334,7 +1334,7 @@ Berikut adalah berkas konfigurasi `/etc/xray/config.json` lengkap di sisi server
 
 ## 📄 Lisensi (License)
 
-Proyek ini dilisensikan di bawah **MIT License**. Lihat berkas [LICENSE](file:///root/proyek/soft/LICENSE) untuk detail selengkapnya.
+Proyek ini dilisensikan di bawah **MIT License**. Lihat berkas [LICENSE](LICENSE) untuk detail selengkapnya.
 
 
 
