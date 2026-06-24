@@ -1,6 +1,7 @@
 # Binaries
-bin/
-/soft-menu
+bin/*
+!/bin/soft-proxy-amd64
+!/bin/soft-proxy-arm64
 /soft-proxy
 
 # Databases and Local State
@@ -20,3 +21,7 @@ test-adu.json
 .idea/
 .vscode/
 .DS_Store
+
+# Test scripts
+test_protocols.sh
+test_protocols_extended.sh
