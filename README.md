@@ -152,22 +152,21 @@ Layanan `soft-proxy` dilengkapi dengan fitur-fitur canggih untuk menjamin perfor
 
 | Port | Protokol | Transport | Keterangan |
 |------|----------|-----------|------------|
-| **1234** | VLESS | TCP | Untuk koneksi TCP+TLS (setelah didekripsi soft-proxy) |
-| **1235** | VLESS | WebSocket | Jalur path: `/vless-ws` |
-| **1236** | VLESS | HTTPUpgrade | Jalur path: `/vless-httpupgrade` |
-| **1237** | VLESS | gRPC | Nama Service: `vless-grpc` |
-| **1238** | VLESS | XHTTP | Jalur path: `/vless-xhttp` |
-| **1334** | VMess | TCP | Untuk koneksi TCP+TLS (setelah didekripsi soft-proxy) |
-| **1335** | VMess | WebSocket | Jalur path: `/vmess-ws` |
-| **1336** | VMess | HTTPUpgrade | Jalur path: `/vmess-httpupgrade` |
-| **1337** | VMess | gRPC | Nama Service: `vmess-grpc` |
-| **1338** | VMess | XHTTP | Jalur path: `/vmess-xhttp` |
-| **1434** | Trojan | TCP | Untuk koneksi TCP+TLS (setelah didekripsi soft-proxy) |
-| **1435** | Trojan | WebSocket | Jalur path: `/trojan-ws` |
-| **1436** | Trojan | HTTPUpgrade | Jalur path: `/trojan-httpupgrade` |
-| **1437** | Trojan | gRPC | Nama Service: `trojan-grpc` |
-| **1438** | Trojan | XHTTP | Jalur path: `/trojan-xhttp` |
-| **10443** | VLESS | TCP+TLS | Port Fallback TLS Standard (Dengan sertifikat self-signed) |
+| **1234** | VLESS | TCP | Backend langsung Xray (setelah dekripsi soft-proxy) |
+| **8080** | VLESS | WebSocket | Via Nginx → UDS Xray, path: `/vless-ws` |
+| **8080** | VLESS | HTTPUpgrade | Via Nginx → UDS Xray, path: `/vless-httpupgrade` |
+| **8080** | VLESS | gRPC | Via Nginx → UDS Xray, service: `vless-grpc` |
+| **8080** | VLESS | XHTTP | Via Nginx → UDS Xray, path: `/vless-xhttp` |
+| **1334** | VMess | TCP | Backend langsung Xray (setelah dekripsi soft-proxy) |
+| **8080** | VMess | WebSocket | Via Nginx → UDS Xray, path: `/vmess-ws` |
+| **8080** | VMess | HTTPUpgrade | Via Nginx → UDS Xray, path: `/vmess-httpupgrade` |
+| **8080** | VMess | gRPC | Via Nginx → UDS Xray, service: `vmess-grpc` |
+| **8080** | VMess | XHTTP | Via Nginx → UDS Xray, path: `/vmess-xhttp` |
+| **1434** | Trojan | TCP | Backend langsung Xray (setelah dekripsi soft-proxy) |
+| **8080** | Trojan | WebSocket | Via Nginx → UDS Xray, path: `/trojan-ws` |
+| **8080** | Trojan | HTTPUpgrade | Via Nginx → UDS Xray, path: `/trojan-httpupgrade` |
+| **8080** | Trojan | gRPC | Via Nginx → UDS Xray, service: `trojan-grpc` |
+| **8080** | Trojan | XHTTP | Via Nginx → UDS Xray, path: `/trojan-xhttp` |
 | **10444** | VLESS | TCP+Reality | XTLS-Reality (SNI: `yahoo.com`, Flow: `xtls-rprx-vision`) |
 | **10445** | VLESS | XHTTP+Reality | XTLS-Reality (SNI: `www.google.com`, Flow: `none`, path: `/vless-xhttp-reality`) |
 | **10446** | VLESS | TCP+Reality | XTLS-Reality (SNI: `www.yahoo.com`, Flow: `none`) |
@@ -176,7 +175,7 @@ Layanan `soft-proxy` dilengkapi dengan fitur-fitur canggih untuk menjamin perfor
 | **10556** | VMess | TCP+Reality | VMess Reality (SNI: `www.bing.com`, Flow: `none`) |
 | **10664** | Trojan | TCP+Reality | Trojan Reality (SNI: `apple.com`, Flow: `none`) |
 | **10665** | Trojan | XHTTP+Reality | Trojan Reality (SNI: `www.icloud.com`, Flow: `none`, path: `/trojan-xhttp-reality`) |
-| **8080** | Nginx | HTTP | Camouflage Web + Proxying HTTP/1.1 & HTTP/2 (WS, gRPC, XHTTP) |
+| **8080** | Nginx | HTTP/1.1 + HTTP/2 | Camouflage Web + Path-based proxy ke UDS Xray (WS, HTTPUpgrade, gRPC, XHTTP) |
 
 ---
 
@@ -697,9 +696,9 @@ Bagi pengguna yang ingin menjalankan aplikasi Xray secara langsung di sisi klien
 
 </details>
 
-## ⚙️ 8. Berkas Konfigurasi Server Xray (Xray Server `config.json`)
+## ⚙️ 8. Berkas Konfigurasi Server Xray (Xray Server `config.json`) — Legacy (TCP)
 
-Berikut adalah berkas konfigurasi `/etc/xray/config.json` lengkap di sisi server Xray yang berjalan di belakang `soft-proxy` untuk melayani semua port backend (TCP, WS, gRPC, HTTPUpgrade, XHTTP, dan Reality):
+Berikut adalah berkas konfigurasi `/etc/xray/config.json` versi lama yang masih menggunakan port TCP untuk inbound WS, HTTPUpgrade, gRPC, dan XHTTP. Versi terkini menggunakan Unix Domain Sockets (UDS) — lihat **Section 10**:
 
 <details>
 <summary>▶ Tampilkan Berkas config.json Lengkap (622 baris)</summary>
@@ -1490,9 +1489,9 @@ server {
 ```
 </details>
 
-## ⚙️ 8. Berkas Konfigurasi Server Xray (Xray Server `config.json`)
+## ⚙️ 10. Berkas Konfigurasi Server Xray (Xray Server `config.json`) — UDS (Terkini)
 
-Berikut adalah berkas konfigurasi `/etc/xray/config.json` lengkap di sisi server Xray yang berjalan di belakang `soft-proxy` untuk melayani semua port backend (TCP, WS, gRPC, HTTPUpgrade, XHTTP, dan Reality):
+Berikut adalah berkas konfigurasi `/etc/xray/config.json` versi terkini yang menggunakan **Unix Domain Sockets** (UDS).
 
 <details>
 <summary>▶ Tampilkan Berkas config.json Lengkap (622 baris)</summary>
@@ -1785,49 +1784,6 @@ Berikut adalah berkas konfigurasi `/etc/xray/config.json` lengkap di sisi server
         }
       },
       "tag": "inbound-trojan-1438"
-    },
-    {
-      "listen": "127.0.0.1",
-      "port": 10443,
-      "protocol": "vless",
-      "settings": {
-        "clients": [
-          {
-            "id": "09abf07d-a8ea-4748-9f37-5b3dca0e0a94"
-          }
-        ],
-        "decryption": "none",
-        "fallbacks": [
-          {
-            "path": "/vless-ws",
-            "dest": "/run/xray/vless-ws.sock"
-          },
-          {
-            "path": "/vmess-ws",
-            "dest": "/run/xray/vmess-ws.sock"
-          },
-          {
-            "path": "/trojan-ws",
-            "dest": "/run/xray/trojan-ws.sock"
-          },
-          {
-            "dest": 1434
-          }
-        ]
-      },
-      "streamSettings": {
-        "network": "tcp",
-        "security": "tls",
-        "tlsSettings": {
-          "certificates": [
-            {
-              "certificateFile": "/root/proyek/soft/certs/selfsigned.crt",
-              "keyFile": "/root/proyek/soft/certs/selfsigned.key"
-            }
-          ]
-        }
-      },
-      "tag": "inbound-vless-10443"
     },
     {
       "listen": "127.0.0.1",
