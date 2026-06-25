@@ -25,3 +25,6 @@ test-adu.json
 # Test scripts
 test_protocols.sh
 test_protocols_extended.sh
+
+# Local management scripts
+scripts/
